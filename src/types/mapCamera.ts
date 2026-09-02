@@ -8,10 +8,24 @@ export type MapCamera = {
   elevationMeters: number
 }
 
+export type MapOverlay = {
+  id: string
+  data: string
+  fillColor?: string
+  fillOpacity?: number
+  lineColor?: string
+}
+
 export type CameraChapter = MapCamera & {
   id: string
   title: string
   description: string
+  location?: string
+  distance?: {
+    label: string
+    camera: MapCamera
+    overlay?: MapOverlay
+  }
   detail: {
     beforeAfter?: {
       before: {
@@ -26,6 +40,7 @@ export type CameraChapter = MapCamera & {
     videos: {
       src: string
       title: string
+      sourceHref?: string
     }[]
     text: string
   }

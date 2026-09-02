@@ -1,21 +1,40 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { TerrainMap } from './components/TerrainMap'
-import { cameraChapters, initialCameraChapter } from './data/cameraChapters'
+import { cameraChapters, globalMapOverlays, initialCameraChapter } from './data/cameraChapters'
+import type { CameraChapter, MapOverlay } from './types/mapCamera'
 
 function App() {
   const [selectedChapterId, setSelectedChapterId] = useState(initialCameraChapter.id)
+  const [activeDistanceChapterId, setActiveDistanceChapterId] = useState<string | null>(null)
   const [activeDetailChapterId, setActiveDetailChapterId] = useState<string | null>(null)
   const [activeVideoIndex, setActiveVideoIndex] = useState(0)
+  const [pendingVideoIndex, setPendingVideoIndex] = useState<number | null>(null)
+  const [isVideoLoading, setIsVideoLoading] = useState(false)
+  const isVideoLoadingRef = useRef(false)
 
-  const selectedChapter =
+  const selectedChapter: CameraChapter =
     cameraChapters.find((chapter) => chapter.id === selectedChapterId) ?? initialCameraChapter
-  const activeDetailChapter = cameraChapters.find(
+  const activeDistanceChapter: CameraChapter | undefined = cameraChapters.find(
+    (chapter) => chapter.id === activeDistanceChapterId,
+  )
+  const activeDetailChapter: CameraChapter | undefined = cameraChapters.find(
     (chapter) => chapter.id === activeDetailChapterId,
   )
-  const activeVideos = activeDetailChapter?.detail.videos ?? []
+  const activeCamera = activeDistanceChapter?.distance?.camera ?? selectedChapter
+  const activeOverlays = useMemo(() => {
+    const overlays: MapOverlay[] = [...globalMapOverlays]
+
+    if (activeDistanceChapter?.distance?.overlay) {
+      overlays.push(activeDistanceChapter.distance.overlay)
+    }
+
+    return overlays
+  }, [activeDistanceChapter])
+  const activeVideos: CameraChapter['detail']['videos'] = activeDetailChapter?.detail.videos ?? []
   const activeVideo = activeVideos[activeVideoIndex]
+  const pendingVideo = pendingVideoIndex === null ? undefined : activeVideos[pendingVideoIndex]
   const hasMultipleVideos = activeVideos.length > 1
 
   useEffect(() => {
@@ -25,7 +44,7 @@ function App() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setActiveDetailChapterId(null)
+        closeChapterDetail()
       }
     }
 
@@ -39,30 +58,85 @@ function App() {
   function openChapterDetail(chapterId: string) {
     setActiveDetailChapterId(chapterId)
     setActiveVideoIndex(0)
+    setPendingVideoIndex(null)
+    setIsVideoLoading(false)
+    isVideoLoadingRef.current = false
+  }
+
+  function selectChapter(chapterId: string) {
+    setSelectedChapterId(chapterId)
+    setActiveDistanceChapterId(null)
+  }
+
+  function showDistance(chapter: CameraChapter) {
+    if (!chapter.distance) {
+      return
+    }
+
+    setSelectedChapterId(chapter.id)
+    setActiveDistanceChapterId(chapter.id)
+    closeChapterDetail()
+  }
+
+  function closeChapterDetail() {
+    setActiveDetailChapterId(null)
+    setPendingVideoIndex(null)
+    setIsVideoLoading(false)
+    isVideoLoadingRef.current = false
+  }
+
+  function requestVideoIndex(nextIndex: number) {
+    if (isVideoLoadingRef.current || nextIndex === activeVideoIndex || !activeVideos[nextIndex]) {
+      return
+    }
+
+    isVideoLoadingRef.current = true
+    setIsVideoLoading(true)
+    setPendingVideoIndex(nextIndex)
+  }
+
+  function showPendingVideo(videoIndex: number) {
+    if (pendingVideoIndex !== videoIndex) {
+      return
+    }
+
+    setActiveVideoIndex(videoIndex)
+    setPendingVideoIndex(null)
+    setIsVideoLoading(false)
+    isVideoLoadingRef.current = false
+  }
+
+  function cancelPendingVideo(videoIndex: number) {
+    if (pendingVideoIndex !== videoIndex) {
+      return
+    }
+
+    setPendingVideoIndex(null)
+    setIsVideoLoading(false)
+    isVideoLoadingRef.current = false
   }
 
   function showPreviousVideo() {
-    setActiveVideoIndex((currentIndex) =>
-      currentIndex === 0 ? activeVideos.length - 1 : currentIndex - 1,
-    )
+    const previousIndex = activeVideoIndex === 0 ? activeVideos.length - 1 : activeVideoIndex - 1
+
+    requestVideoIndex(previousIndex)
   }
 
   function showNextVideo() {
-    setActiveVideoIndex((currentIndex) =>
-      currentIndex === activeVideos.length - 1 ? 0 : currentIndex + 1,
-    )
+    const nextIndex = activeVideoIndex === activeVideos.length - 1 ? 0 : activeVideoIndex + 1
+
+    requestVideoIndex(nextIndex)
   }
 
   return (
     <main className="app-shell">
-      <TerrainMap camera={selectedChapter} />
+      <TerrainMap camera={activeCamera} overlays={activeOverlays} />
 
       <section className="map-panel story-panel" aria-labelledby="map-title">
-        <p className="eyebrow">Interactive Terrain Story</p>
-        <h1 id="map-title">Nepal Terrain Views</h1>
+        <p className="eyebrow">Interactive Story</p>
+        <h1 id="map-title">Nepal Flash Flood</h1>
         <p>
-          Select a chapter to fly the camera to a saved 3D view. Chapters use
-          explicit longitude, latitude, zoom, pitch, bearing, and elevation values.
+          Select chapters to fly to their views. Read More and view distances along the path of the flash flood.
         </p>
 
         <div className="chapter-list" aria-label="Story chapters">
@@ -75,7 +149,7 @@ function App() {
                 type="button"
                 className="chapter-button"
                 aria-pressed={chapter.id === selectedChapter.id}
-                onClick={() => setSelectedChapterId(chapter.id)}
+                onClick={() => selectChapter(chapter.id)}
               >
                 <span className="chapter-kicker">Chapter {index + 1}</span>
                 <span className="chapter-title-row">
@@ -83,13 +157,24 @@ function App() {
                 </span>
                 <span className="chapter-description">{chapter.description}</span>
               </button>
-              <button
-                type="button"
-                className="read-more-button"
-                onClick={() => openChapterDetail(chapter.id)}
-              >
-                Read More
-              </button>
+              <div className="chapter-actions">
+                <button
+                  type="button"
+                  className="read-more-button"
+                  onClick={() => openChapterDetail(chapter.id)}
+                >
+                  Read More
+                </button>
+                {chapter.distance ? (
+                <button
+                  type="button"
+                  className="distance-button"
+                  onClick={() => showDistance(chapter)}
+                >
+                  {chapter.distance.label}
+                </button>
+                ) : null}
+              </div>
             </article>
           ))}
         </div>
@@ -106,7 +191,7 @@ function App() {
         <div
           className="modal-backdrop"
           role="presentation"
-          onClick={() => setActiveDetailChapterId(null)}
+          onClick={closeChapterDetail}
         >
           <section
             className="detail-modal"
@@ -116,12 +201,12 @@ function App() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="detail-modal-header">
-              <p className="eyebrow">Chapter Detail</p>
+              <p className="eyebrow">{activeDetailChapter.location ?? 'Chapter Detail'}</p>
               <button
                 type="button"
                 className="modal-close-button"
                 aria-label="Close detail modal"
-                onClick={() => setActiveDetailChapterId(null)}
+                onClick={closeChapterDetail}
               >
                 Close
               </button>
@@ -135,24 +220,57 @@ function App() {
             ) : null}
             {activeVideo ? (
               <>
-                <video
-                  className="detail-video"
-                  controls
-                  key={activeVideo.src}
-                  src={activeVideo.src}
-                  title={activeVideo.title}
-                >
-                  Your browser does not support the video tag.
-                </video>
+                {activeVideo.sourceHref ? (
+                  <div className="video-source-row">
+                    <a
+                      className="detail-source-link"
+                      href={activeVideo.sourceHref}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Source
+                    </a>
+                  </div>
+                ) : null}
+                <div className="video-frame">
+                  <video
+                    className="detail-video"
+                    controls
+                    preload="auto"
+                    src={activeVideo.src}
+                    title={activeVideo.title}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                  {pendingVideo ? (
+                    <video
+                      aria-hidden="true"
+                      className="video-preloader"
+                      muted
+                      preload="auto"
+                      src={pendingVideo.src}
+                      onCanPlay={() => {
+                        if (pendingVideoIndex !== null) {
+                          showPendingVideo(pendingVideoIndex)
+                        }
+                      }}
+                      onError={() => {
+                        if (pendingVideoIndex !== null) {
+                          cancelPendingVideo(pendingVideoIndex)
+                        }
+                      }}
+                    />
+                  ) : null}
+                </div>
                 {hasMultipleVideos ? (
                   <div className="video-navigation" aria-label="Video navigation">
-                    <button type="button" onClick={showPreviousVideo}>
+                    <button type="button" disabled={isVideoLoading} onClick={showPreviousVideo}>
                       Prev Video
                     </button>
                     <span>
-                      {activeVideoIndex + 1} of {activeVideos.length}
+                      {isVideoLoading ? 'Loading' : activeVideoIndex + 1} of {activeVideos.length}
                     </span>
-                    <button type="button" onClick={showNextVideo}>
+                    <button type="button" disabled={isVideoLoading} onClick={showNextVideo}>
                       Next Video
                     </button>
                   </div>

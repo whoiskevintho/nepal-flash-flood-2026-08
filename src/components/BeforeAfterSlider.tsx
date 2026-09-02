@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 
 type BeforeAfterSliderProps = {
   before: {
@@ -12,8 +12,30 @@ type BeforeAfterSliderProps = {
   initialPosition?: number
 }
 
+type ImageLoadStatus = 'loading' | 'ready' | 'error'
+
+type LoadedImages = {
+  beforeSrc: string
+  afterSrc: string
+  status: ImageLoadStatus
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
+}
+
+function loadImage(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const image = new Image()
+
+    image.onload = () => {
+      resolve()
+    }
+    image.onerror = () => {
+      reject(new Error(`Failed to load image: ${src}`))
+    }
+    image.src = src
+  })
 }
 
 export function BeforeAfterSlider({
@@ -24,6 +46,43 @@ export function BeforeAfterSlider({
   const sliderRef = useRef<HTMLDivElement | null>(null)
   const [sliderPosition, setSliderPosition] = useState(() => clamp(initialPosition, 0, 100))
   const [isDragging, setIsDragging] = useState(false)
+  const [loadedImages, setLoadedImages] = useState<LoadedImages>({
+    beforeSrc: before.src,
+    afterSrc: after.src,
+    status: 'loading',
+  })
+  const imageLoadStatus =
+    loadedImages.beforeSrc === before.src && loadedImages.afterSrc === after.src
+      ? loadedImages.status
+      : 'loading'
+
+  useEffect(() => {
+    let isCancelled = false
+
+    Promise.all([loadImage(before.src), loadImage(after.src)])
+      .then(() => {
+        if (!isCancelled) {
+          setLoadedImages({
+            beforeSrc: before.src,
+            afterSrc: after.src,
+            status: 'ready',
+          })
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setLoadedImages({
+            beforeSrc: before.src,
+            afterSrc: after.src,
+            status: 'error',
+          })
+        }
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [after.src, before.src])
 
   function updateSliderPosition(clientX: number) {
     const slider = sliderRef.current
@@ -33,6 +92,11 @@ export function BeforeAfterSlider({
     }
 
     const bounds = slider.getBoundingClientRect()
+
+    if (bounds.width === 0) {
+      return
+    }
+
     const nextPosition = ((clientX - bounds.left) / bounds.width) * 100
 
     setSliderPosition(clamp(nextPosition, 0, 100))
@@ -54,7 +118,10 @@ export function BeforeAfterSlider({
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
     setIsDragging(false)
-    event.currentTarget.releasePointerCapture(event.pointerId)
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -79,6 +146,16 @@ export function BeforeAfterSlider({
     }
   }
 
+  if (imageLoadStatus !== 'ready') {
+    return (
+      <div className="before-after-slider before-after-slider-placeholder" aria-live="polite">
+        {imageLoadStatus === 'loading'
+          ? 'Loading before and after imagery...'
+          : 'Before and after imagery could not be loaded.'}
+      </div>
+    )
+  }
+
   return (
     <div
       className="before-after-slider"
@@ -95,12 +172,24 @@ export function BeforeAfterSlider({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <img className="before-after-image" src={after.src} alt={after.alt} draggable={false} />
+      <img
+        className="before-after-image"
+        src={after.src}
+        alt={after.alt}
+        draggable={false}
+        decoding="async"
+      />
       <div
         className="before-after-overlay"
         style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
       >
-        <img className="before-after-image" src={before.src} alt={before.alt} draggable={false} />
+        <img
+          className="before-after-image"
+          src={before.src}
+          alt={before.alt}
+          draggable={false}
+          decoding="async"
+        />
       </div>
       <span className="before-after-label before-after-label-before">Before</span>
       <span className="before-after-label before-after-label-after">After</span>

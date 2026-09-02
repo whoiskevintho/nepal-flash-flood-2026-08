@@ -1,22 +1,20 @@
 import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type {
-  GeoJSONSourceSpecification,
   LayerSpecification,
   RasterDEMSourceSpecification,
   RasterSourceSpecification,
   StyleSpecification,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { CameraChapter } from '../types/mapCamera'
+import type { MapCamera, MapOverlay } from '../types/mapCamera'
 
 const SATELLITE_SOURCE_ID = 'satelliteSource'
 const TERRAIN_SOURCE_ID = 'terrainSource'
-const GLACIER_BREAK_SOURCE_ID = 'glacierBreakSource'
+const OVERLAY_ID_PREFIX = 'geojson-overlay'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
 const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
-const GLACIER_BREAK_GEOJSON_URL = '/data/glacier_burst_shape.geojson'
 
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
@@ -36,36 +34,51 @@ const demSource: RasterDEMSourceSpecification = {
   maxzoom: 15,
 }
 
-const glacierBreakSource: GeoJSONSourceSpecification = {
-  type: 'geojson',
-  data: GLACIER_BREAK_GEOJSON_URL,
-}
-
 const satelliteLayer: LayerSpecification = {
   id: 'satellite',
   type: 'raster',
   source: SATELLITE_SOURCE_ID,
 }
 
-const glacierBreakFillLayer: LayerSpecification = {
-  id: 'glacier-break-fill',
-  type: 'fill',
-  source: GLACIER_BREAK_SOURCE_ID,
-  paint: {
-    'fill-color': '#ffd400',
-    'fill-opacity': 0.22,
-  },
+function getSafeOverlayId(overlay: MapOverlay) {
+  return overlay.id.replace(/[^a-z0-9-_]/gi, '-')
 }
 
-const glacierBreakOutlineLayer: LayerSpecification = {
-  id: 'glacier-break-outline',
+function getOverlaySourceId(overlay: MapOverlay) {
+  return `${OVERLAY_ID_PREFIX}-source-${getSafeOverlayId(overlay)}`
+}
+
+function getOverlayFillLayerId(overlay: MapOverlay) {
+  return `${OVERLAY_ID_PREFIX}-fill-${getSafeOverlayId(overlay)}`
+}
+
+function getOverlayOutlineLayerId(overlay: MapOverlay) {
+  return `${OVERLAY_ID_PREFIX}-outline-${getSafeOverlayId(overlay)}`
+}
+
+function getOverlayFillLayer(overlay: MapOverlay): LayerSpecification {
+  return {
+    id: getOverlayFillLayerId(overlay),
+    type: 'fill',
+    source: getOverlaySourceId(overlay),
+    paint: {
+      'fill-color': overlay.fillColor ?? '#d71920',
+      'fill-opacity': overlay.fillOpacity ?? 0.24,
+    },
+  }
+}
+
+function getOverlayOutlineLayer(overlay: MapOverlay): LayerSpecification {
+  return {
+    id: getOverlayOutlineLayerId(overlay),
   type: 'line',
-  source: GLACIER_BREAK_SOURCE_ID,
-  paint: {
-    'line-color': '#ffd400',
-    'line-opacity': 1,
-    'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5, 18, 8],
-  },
+    source: getOverlaySourceId(overlay),
+    paint: {
+      'line-color': overlay.lineColor ?? overlay.fillColor ?? '#d71920',
+      'line-opacity': 1,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5, 18, 8],
+    },
+  }
 }
 
 const terrainStyle: StyleSpecification = {
@@ -73,22 +86,53 @@ const terrainStyle: StyleSpecification = {
   sources: {
     [SATELLITE_SOURCE_ID]: satelliteSource,
     [TERRAIN_SOURCE_ID]: demSource,
-    [GLACIER_BREAK_SOURCE_ID]: glacierBreakSource,
   },
   layers: [satelliteLayer],
 }
 
-function addGlacierBreakLayers(map: maplibregl.Map) {
-  if (!map.getLayer(glacierBreakFillLayer.id)) {
-    map.addLayer(glacierBreakFillLayer)
-  }
+function removeRenderedOverlays(map: maplibregl.Map) {
+  const overlayLayers = map
+    .getStyle()
+    .layers?.filter((layer) => layer.id.startsWith(`${OVERLAY_ID_PREFIX}-`))
+    .reverse()
 
-  if (!map.getLayer(glacierBreakOutlineLayer.id)) {
-    map.addLayer(glacierBreakOutlineLayer)
-  }
+  overlayLayers?.forEach((layer) => {
+    if (map.getLayer(layer.id)) {
+      map.removeLayer(layer.id)
+    }
+  })
+
+  Object.keys(map.getStyle().sources)
+    .filter((sourceId) => sourceId.startsWith(`${OVERLAY_ID_PREFIX}-source-`))
+    .forEach((sourceId) => {
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId)
+      }
+    })
 }
 
-function getChapterCamera(chapter: CameraChapter) {
+function addOverlay(map: maplibregl.Map, overlay: MapOverlay) {
+  map.addSource(getOverlaySourceId(overlay), {
+    type: 'geojson',
+    data: overlay.data,
+  })
+
+  if (overlay.fillColor) {
+    map.addLayer(getOverlayFillLayer(overlay))
+  }
+
+  map.addLayer(getOverlayOutlineLayer(overlay))
+}
+
+function setActiveOverlays(map: maplibregl.Map, overlays: MapOverlay[]) {
+  removeRenderedOverlays(map)
+
+  overlays.forEach((overlay) => {
+    addOverlay(map, overlay)
+  })
+}
+
+function getChapterCamera(chapter: MapCamera) {
   return {
     center: chapter.center,
     zoom: chapter.zoom,
@@ -97,7 +141,7 @@ function getChapterCamera(chapter: CameraChapter) {
   }
 }
 
-function getElevatedChapterCamera(chapter: CameraChapter) {
+function getElevatedChapterCamera(chapter: MapCamera) {
   return {
     ...getChapterCamera(chapter),
     elevation: chapter.elevationMeters,
@@ -116,7 +160,7 @@ function getCurrentElevatedCamera(map: maplibregl.Map) {
   }
 }
 
-function jumpToChapter(map: maplibregl.Map, chapter: CameraChapter) {
+function jumpToChapter(map: maplibregl.Map, chapter: MapCamera) {
   if (!map.getTerrain()) {
     map.jumpTo(getChapterCamera(chapter))
     return
@@ -127,7 +171,7 @@ function jumpToChapter(map: maplibregl.Map, chapter: CameraChapter) {
   map.jumpTo(getElevatedChapterCamera(chapter))
 }
 
-function flyToChapter(map: maplibregl.Map, chapter: CameraChapter) {
+function flyToChapter(map: maplibregl.Map, chapter: MapCamera) {
   map.stop()
 
   if (!map.getTerrain()) {
@@ -153,18 +197,24 @@ function flyToChapter(map: maplibregl.Map, chapter: CameraChapter) {
 }
 
 type TerrainMapProps = {
-  camera: CameraChapter
+  camera: MapCamera
+  overlays?: MapOverlay[]
 }
 
-export function TerrainMap({ camera }: TerrainMapProps) {
+export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const cameraRef = useRef(camera)
+  const overlaysRef = useRef(overlays)
   const terrainReadyRef = useRef(false)
 
   useEffect(() => {
     cameraRef.current = camera
   }, [camera])
+
+  useEffect(() => {
+    overlaysRef.current = overlays
+  }, [overlays])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -198,7 +248,7 @@ export function TerrainMap({ camera }: TerrainMapProps) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
     map.once('load', () => {
-      addGlacierBreakLayers(map)
+      setActiveOverlays(map, overlaysRef.current)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
       map.setSky({})
 
@@ -234,6 +284,16 @@ export function TerrainMap({ camera }: TerrainMapProps) {
 
     flyToChapter(map, camera)
   }, [camera])
+
+  useEffect(() => {
+    const map = mapRef.current
+
+    if (!map || !terrainReadyRef.current) {
+      return
+    }
+
+    setActiveOverlays(map, overlays)
+  }, [overlays])
 
   return <div ref={containerRef} className="terrain-map" aria-label="3D terrain map of Nepal" />
 }
