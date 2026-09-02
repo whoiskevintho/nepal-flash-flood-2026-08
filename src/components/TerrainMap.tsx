@@ -1,13 +1,17 @@
 import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import { setWorkerUrl } from 'maplibre-gl'
 import type {
   LayerSpecification,
   RasterDEMSourceSpecification,
   RasterSourceSpecification,
   StyleSpecification,
 } from 'maplibre-gl'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { MapCamera, MapOverlay } from '../types/mapCamera'
+
+setWorkerUrl(maplibreWorkerUrl)
 
 const SATELLITE_SOURCE_ID = 'satelliteSource'
 const TERRAIN_SOURCE_ID = 'terrainSource'
