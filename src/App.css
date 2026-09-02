@@ -213,7 +213,7 @@
 .detail-modal {
   width: min(760px, 100%);
   max-height: min(860px, calc(100svh - 48px));
-  overflow: auto;
+  overflow: hidden;
   padding: clamp(20px, 4vw, 36px);
   color: #111;
   background: rgb(255 255 255 / 97%);
@@ -239,6 +239,7 @@
 .before-after-slider {
   position: relative;
   width: 100%;
+  max-height: min(36svh, 360px);
   aspect-ratio: 16 / 9;
   margin-bottom: 18px;
   overflow: hidden;
@@ -334,13 +335,18 @@
 
 .video-frame {
   position: relative;
+  display: grid;
+  place-items: center;
   margin-bottom: 12px;
   background: #111;
 }
 
 .detail-video {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: min(42svh, 420px);
+  object-fit: contain;
   background: #111;
 }
 
@@ -457,5 +463,13 @@
 
   .detail-modal h2 {
     font-size: clamp(1.5rem, 7vw, 2.15rem);
+  }
+
+  .detail-video {
+    max-height: 34svh;
+  }
+
+  .before-after-slider {
+    max-height: 28svh;
   }
 }

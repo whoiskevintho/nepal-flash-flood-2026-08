@@ -93,7 +93,7 @@ export const cameraChapters = [
       },
       overlay: {
         id: 'distance-glacier-to-work-site',
-        data: '/data/distance_glacier_to_rasu.geojson',
+        data: '/data/distance_glacier_to_worksite1.geojson',
         lineColor: '#d71920',
       },
     },
@@ -101,8 +101,14 @@ export const cameraChapters = [
       // Add sourceHref to each video when you have the original web source URL.
       videos: [
         {
-          src: '/videos/work-site.mp4',
-          title: 'Work Site Footage',
+          src: '/videos/worksite1_video_on_ground.mp4',
+          title: 'Worksite Ground',
+          sourceHref: 'https://www.facebook.com/reel/1928523987821099',
+        },
+        {
+          src: '/videos/worksite1_video_up_high.mp4',
+          title: 'Worksite Up High',
+          sourceHref: 'https://www.instagram.com/reel/DcksC1Yx2RA/',
         },
       ],
       text: 'Footage from the work site gives a closer look at the terrain and infrastructure affected farther downstream.',
