@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "locations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1, "Location": "Work Site" }, "geometry": { "type": "Point", "coordinates": [ 85.20929801481914, 28.073237198727874 ] } },
+{ "type": "Feature", "properties": { "id": 2, "Location": "Glacier" }, "geometry": { "type": "Point", "coordinates": [ 85.528232832191961, 28.288135494904122 ] } },
+{ "type": "Feature", "properties": { "id": 3, "Location": "Rasuwagadi" }, "geometry": { "type": "Point", "coordinates": [ 85.377990406041533, 28.279418900905195 ] } },
+{ "type": "Feature", "properties": { "id": 4, "Location": "TrishuliGu" }, "geometry": { "type": "Point", "coordinates": [ 85.148299424209526, 27.920566397222448 ] } },
+{ "type": "Feature", "properties": { "id": 5, "Location": "Betrawoti" }, "geometry": { "type": "Point", "coordinates": [ 85.185612754026721, 27.975662415397455 ] } },
+{ "type": "Feature", "properties": { "id": 6, "Location": "Above" }, "geometry": { "type": "Point", "coordinates": [ 85.148284878520059, 27.928136276131237 ] } }
+]
+}
