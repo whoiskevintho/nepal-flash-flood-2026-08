@@ -27,7 +27,7 @@ export const cameraChapters = [
       // Add sourceHref to each video when you have the original web source URL.
       videos: [
       ],
-      text: 'At around 10:30am on 2026-08-26, part of the glacier below Langtang Lirung Peak breaks away, registering as a 5.2 seismic event.',
+      text: 'At around 8:40am on 2026-08-26, part of the glacier below Langtang Lirung Peak breaks away, registering as a 5.2 seismic event.',
     },
   },
   {
@@ -69,7 +69,7 @@ export const cameraChapters = [
           sourceHref: 'https://x.com/MrGafish/status/2092532134649229713',
         },
       ],
-      text: 'This chapter focuses on the border crossing area, where CCTV and ground footage can help connect the map view to the path of flood impacts.',
+      text: 'By 9:00am, the debri flow had reach the Tibet/Nepal border crossing, travleing 13 miles to get to this point. CCTV cameras captured the catastrophic flow The CCTV footage time stamps reflect Beijing time (+2)',
     },
   },
   {
@@ -85,10 +85,10 @@ export const cameraChapters = [
     distance: {
       label: 'Distance',
       camera: {
-        center: [85.2754, 28.1735],
-        zoom: 11.46,
-        pitch: 46,
-        bearing: 71.7,
+        center: [85.298, 28.1804],
+        zoom: 11.17,
+        pitch: 48,
+        bearing: 84.5,
         elevationMeters: 4850,
       },
       overlay: {
@@ -112,6 +112,88 @@ export const cameraChapters = [
         },
       ],
       text: 'Footage from the work site gives a closer look at the terrain and infrastructure affected farther downstream.',
+    },
+  },
+  {
+    id: 'betrawati-bazaar',
+    title: 'The town of Betrawati',
+    location: 'Betrawati Bazaar',
+    description: 'Videos taken above the town of Betrawati.',
+    center: [85.170015, 27.948871],
+    zoom: 18,
+    pitch: 35, 
+    bearing: 22.6,
+    elevationMeters: 1400,
+    distance: {
+      label: 'Distance',
+      camera: {
+        center: [85.2545, 28.1087],
+        zoom: 10.78,
+        pitch: 50,
+        bearing: 65.8,
+        elevationMeters: 4850,
+      },
+      overlay: {
+        id: 'distance-glacier-to-work-site',
+        data: '/data/distance_glacier_to_worksite1.geojson',
+        lineColor: '#d71920',
+      },
+    },
+    detail: {
+      videos: [
+        {
+          youtubeUrl: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
+          title: 'Betrawati Bazaar',
+          sourceHref: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
+        },
+        {
+          youtubeUrl: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
+          title: 'Betrawati Bazaar',
+          sourceHref: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
+        },
+      ],
+      text: 'Footage from above Betrawati Bazaar shows the town and the path of flood water farther downstream.',
+    },
+  },
+  {
+    id: 'trishuli-bidur',
+    title: 'The town of Trishuli',
+    location: 'The town of Trishuli',
+    description: 'Videos taken in the town of Trishuli.',
+    center: [85.132904, 27.900052],
+    zoom: 18,
+    pitch: 35, 
+    bearing: 22.6,
+    elevationMeters: 1400,
+    distance: {
+      label: 'Distance',
+      camera: {
+        center: [85.2545, 28.1087],
+        zoom: 10.78,
+        pitch: 50,
+        bearing: 65.8,
+        elevationMeters: 4850,
+      },
+      overlay: {
+        id: 'distance-glacier-to-work-site',
+        data: '/data/distance_glacier_to_worksite1.geojson',
+        lineColor: '#d71920',
+      },
+    },
+    detail: {
+      videos: [
+        {
+          youtubeUrl: 'https://www.youtube.com/watch?v=P1AodkdPMck',
+          title: 'Betrawati Bazaar',
+          sourceHref: 'https://www.youtube.com/watch?v=P1AodkdPMck',
+        },
+        {
+          youtubeUrl: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
+          title: 'Betrawati Bazaar',
+          sourceHref: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
+        },
+      ],
+      text: 'Footage from above Betrawati Bazaar shows the town and the path of flood water farther downstream.',
     },
   },
 ] satisfies CameraChapter[]

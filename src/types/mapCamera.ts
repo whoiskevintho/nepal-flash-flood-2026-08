@@ -16,6 +16,20 @@ export type MapOverlay = {
   lineColor?: string
 }
 
+export type ChapterVideo = {
+  title: string
+  sourceHref?: string
+} & (
+  | {
+      src: string
+      youtubeUrl?: never
+    }
+  | {
+      youtubeUrl: string
+      src?: never
+    }
+)
+
 export type CameraChapter = MapCamera & {
   id: string
   title: string
@@ -37,11 +51,7 @@ export type CameraChapter = MapCamera & {
         alt: string
       }
     }
-    videos: {
-      src: string
-      title: string
-      sourceHref?: string
-    }[]
+    videos: ChapterVideo[]
     text: string
   }
 }

@@ -3,7 +3,33 @@ import './App.css'
 import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { TerrainMap } from './components/TerrainMap'
 import { cameraChapters, globalMapOverlays, initialCameraChapter } from './data/cameraChapters'
-import type { CameraChapter, MapOverlay } from './types/mapCamera'
+import type { CameraChapter, ChapterVideo, MapOverlay } from './types/mapCamera'
+
+function getYoutubeEmbedUrl(youtubeUrl: string) {
+  try {
+    const parsed = new URL(youtubeUrl)
+    const host = parsed.hostname.replace(/^www\./, '')
+
+    if (host === 'youtu.be') {
+      const id = parsed.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+      const id =
+        parsed.searchParams.get('v') ?? parsed.pathname.match(/\/(?:embed|shorts)\/([^/]+)/)?.[1]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function isYoutubeVideo(video: ChapterVideo): video is ChapterVideo & { youtubeUrl: string } {
+  return Boolean(video.youtubeUrl)
+}
 
 function App() {
   const [selectedChapterId, setSelectedChapterId] = useState(initialCameraChapter.id)
@@ -86,7 +112,17 @@ function App() {
   }
 
   function requestVideoIndex(nextIndex: number) {
-    if (isVideoLoadingRef.current || nextIndex === activeVideoIndex || !activeVideos[nextIndex]) {
+    const nextVideo = activeVideos[nextIndex]
+
+    if (isVideoLoadingRef.current || nextIndex === activeVideoIndex || !nextVideo) {
+      return
+    }
+
+    if (isYoutubeVideo(nextVideo)) {
+      setActiveVideoIndex(nextIndex)
+      setPendingVideoIndex(null)
+      setIsVideoLoading(false)
+      isVideoLoadingRef.current = false
       return
     }
 
@@ -233,16 +269,26 @@ function App() {
                   </div>
                 ) : null}
                 <div className="video-frame">
-                  <video
-                    className="detail-video"
-                    controls
-                    preload="auto"
-                    src={activeVideo.src}
-                    title={activeVideo.title}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                  {pendingVideo ? (
+                  {isYoutubeVideo(activeVideo) ? (
+                    <iframe
+                      className="detail-youtube"
+                      src={getYoutubeEmbedUrl(activeVideo.youtubeUrl) ?? undefined}
+                      title={activeVideo.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      className="detail-video"
+                      controls
+                      preload="auto"
+                      src={activeVideo.src}
+                      title={activeVideo.title}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
+                  {pendingVideo && !isYoutubeVideo(pendingVideo) ? (
                     <video
                       aria-hidden="true"
                       className="video-preloader"

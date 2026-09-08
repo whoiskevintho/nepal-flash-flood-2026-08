@@ -350,6 +350,15 @@
   background: #111;
 }
 
+.detail-youtube {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: min(42svh, 420px);
+  border: 0;
+  background: #111;
+}
+
 .video-preloader {
   position: absolute;
   width: 1px;
@@ -465,7 +474,8 @@
     font-size: clamp(1.5rem, 7vw, 2.15rem);
   }
 
-  .detail-video {
+  .detail-video,
+  .detail-youtube {
     max-height: 34svh;
   }
 
