@@ -211,10 +211,12 @@
 }
 
 .detail-modal {
+  display: flex;
+  flex-direction: column;
   width: min(760px, 100%);
-  max-height: min(860px, calc(100svh - 48px));
+  max-height: calc(100svh - 48px);
   overflow: hidden;
-  padding: clamp(20px, 4vw, 36px);
+  padding: clamp(16px, 3vw, 28px);
   color: #111;
   background: rgb(255 255 255 / 97%);
   box-shadow: 0 28px 90px rgb(0 0 0 / 42%);
@@ -223,14 +225,16 @@
 
 .detail-modal-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .detail-modal h2 {
-  margin: 0 0 18px;
+  flex-shrink: 0;
+  margin: 0 0 12px;
   font-size: clamp(1.65rem, 3.4vw, 2.45rem);
   line-height: 0.95;
   letter-spacing: -0.045em;
@@ -238,10 +242,11 @@
 
 .before-after-slider {
   position: relative;
+  flex-shrink: 0;
   width: 100%;
-  max-height: min(36svh, 360px);
+  max-height: min(28svh, 280px);
   aspect-ratio: 16 / 9;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   overflow: hidden;
   color: #fff;
   background: #111;
@@ -329,34 +334,70 @@
 
 .video-source-row {
   display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
   justify-content: flex-start;
+  gap: 10px;
   margin: 0 0 8px;
+}
+
+.video-title {
+  display: inline-block;
+  padding: 0.12rem 0.38rem;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  background: #ffd400;
 }
 
 .video-frame {
   position: relative;
-  display: grid;
-  place-items: center;
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 100%;
+  height: min(32svh, 340px);
+  margin-bottom: 10px;
+  overflow: hidden;
   background: #111;
 }
 
 .detail-video {
   display: block;
   width: auto;
+  height: auto;
   max-width: 100%;
-  max-height: min(42svh, 420px);
+  max-height: 100%;
   object-fit: contain;
   background: #111;
 }
 
-.detail-youtube {
+.detail-youtube,
+.detail-facebook {
   display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: min(42svh, 420px);
   border: 0;
   background: #111;
+}
+
+.detail-youtube.is-landscape,
+.detail-facebook.is-landscape {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.detail-youtube.is-portrait,
+.detail-facebook.is-portrait {
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  aspect-ratio: 9 / 16;
 }
 
 .video-preloader {
@@ -369,10 +410,11 @@
 
 .video-navigation {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   color: #555;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.72rem;
@@ -429,10 +471,11 @@
 }
 
 .detail-modal p {
+  flex-shrink: 0;
   margin: 0;
   color: #333;
   font-size: 1.02rem;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .modal-close-button {
@@ -474,12 +517,11 @@
     font-size: clamp(1.5rem, 7vw, 2.15rem);
   }
 
-  .detail-video,
-  .detail-youtube {
-    max-height: 34svh;
+  .video-frame {
+    height: min(26svh, 260px);
   }
 
   .before-after-slider {
-    max-height: 28svh;
+    max-height: 22svh;
   }
 }

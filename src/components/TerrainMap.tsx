@@ -19,6 +19,9 @@ const OVERLAY_ID_PREFIX = 'geojson-overlay'
 const PLACE_LABELS_SOURCE_ID = 'place-labels'
 const PLACE_LABELS_LAYER_ID = 'place-labels'
 const PLACE_LABELS_DATA = '/data/locations.geojson'
+const VIDEO_LABELS_SOURCE_ID = 'video-labels'
+const VIDEO_LABELS_LAYER_ID = 'video-labels'
+const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
 const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
@@ -113,6 +116,31 @@ function getPlaceLabelsLayer(): LayerSpecification {
   }
 }
 
+function getVideoLabelsLayer(): LayerSpecification {
+  return {
+    id: VIDEO_LABELS_LAYER_ID,
+    type: 'symbol',
+    source: VIDEO_LABELS_SOURCE_ID,
+    layout: {
+      'text-field': ['get', 'video'],
+      'text-font': ['Noto Sans Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 10, 14, 16, 28],
+      'text-anchor': 'top',
+      'text-offset': [0, 0.6],
+      'text-pitch-alignment': 'viewport',
+      'text-rotation-alignment': 'viewport',
+      'text-allow-overlap': true,
+      'symbol-height-anchor': 'ground',
+      'symbol-height-offset': 40,
+    },
+    paint: {
+      'text-color': '#ffd400',
+      'text-halo-color': '#111111',
+      'text-halo-width': 1,
+    },
+  }
+}
+
 const terrainStyle: StyleSpecification = {
   version: 8,
   glyphs: `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${MAPTILER_KEY ?? ''}`,
@@ -170,9 +198,26 @@ function addPlaceLabels(map: maplibregl.Map) {
   }
 }
 
-function bringPlaceLabelsToFront(map: maplibregl.Map) {
+function addVideoLabels(map: maplibregl.Map) {
+  if (!map.getSource(VIDEO_LABELS_SOURCE_ID)) {
+    map.addSource(VIDEO_LABELS_SOURCE_ID, {
+      type: 'geojson',
+      data: VIDEO_LABELS_DATA,
+    })
+  }
+
+  if (!map.getLayer(VIDEO_LABELS_LAYER_ID)) {
+    map.addLayer(getVideoLabelsLayer())
+  }
+}
+
+function bringLabelsToFront(map: maplibregl.Map) {
   if (map.getLayer(PLACE_LABELS_LAYER_ID)) {
     map.moveLayer(PLACE_LABELS_LAYER_ID)
+  }
+
+  if (map.getLayer(VIDEO_LABELS_LAYER_ID)) {
+    map.moveLayer(VIDEO_LABELS_LAYER_ID)
   }
 }
 
@@ -183,7 +228,7 @@ function setActiveOverlays(map: maplibregl.Map, overlays: MapOverlay[]) {
     addOverlay(map, overlay)
   })
 
-  bringPlaceLabelsToFront(map)
+  bringLabelsToFront(map)
 }
 
 function getChapterCamera(chapter: MapCamera) {
@@ -304,6 +349,7 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
     map.once('load', () => {
       setActiveOverlays(map, overlaysRef.current)
       addPlaceLabels(map)
+      addVideoLabels(map)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
       map.setSky({})
 

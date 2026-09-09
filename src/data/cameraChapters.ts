@@ -34,10 +34,10 @@ export const cameraChapters = [
     id: 'border-crossing-rasu',
     title: 'Border Crossing, CCTV',
     location: 'Rasuwagadhi',
-    description: 'Rasu, the border of Nepal and Tibet (China).',
-    center: [85.36239, 28.244456],
-    zoom: 16.47,
-    pitch: 55,
+    description: 'CCTV cameras capture debris flow destroy border crossing.',
+    center: [85.367247, 28.259807],
+    zoom: 18,
+    pitch: 39,
     bearing: 21.4,
     elevationMeters: 1000,
     distance: {
@@ -59,24 +59,19 @@ export const cameraChapters = [
       // Add sourceHref to each video when you have the original web source URL.
       videos: [
         {
-          src: '/videos/CCTV_nepal-flood-border-crossing-1.mp4',
-          title: 'Glacier Burst',
+          youtubeUrl: 'https://youtu.be/oq7EXEEpQlg?si=R5TpYXDI3y3wR3l_',
+          title: 'Video 1 & 2',
           sourceHref: 'https://x.com/MrGafish/status/2092547312518348820?s=46',
         },
-        {
-          src: '/videos/CCTV_nepal-flood-border-crossing-2.mp4',
-          title: 'Glacier Burst',
-          sourceHref: 'https://x.com/MrGafish/status/2092532134649229713',
-        },
       ],
-      text: 'By 9:00am, the debri flow had reach the Tibet/Nepal border crossing, travleing 13 miles to get to this point. CCTV cameras captured the catastrophic flow The CCTV footage time stamps reflect Beijing time (+2)',
+      text: 'By 9:00am, the debri flow had reach the Tibet/Nepal border crossing, travleing 13 miles to get to this point. CCTV cameras captured the destruction and are time stamped with Beijing time (+2)',
     },
   },
   {
     id: 'work-site',
-    title: 'Work Site',
-    location: 'Work Site along Trishuli River ',
-    description: 'Video taken from work site.',
+    title: 'Hydropower work-site',
+    location: 'Mailung',
+    description: 'Videos capture hydropower site destroyed by debri flow.',
     center: [85.197469, 28.05221],
     zoom: 18,
     pitch: 35,
@@ -98,20 +93,19 @@ export const cameraChapters = [
       },
     },
     detail: {
-      // Add sourceHref to each video when you have the original web source URL.
       videos: [
         {
-          src: '/videos/worksite1_video_on_ground.mp4',
-          title: 'Worksite Ground',
-          sourceHref: 'https://www.facebook.com/reel/1928523987821099',
+          facebookUrl: 'https://www.facebook.com/reel/1928523987821099',
+          title: 'Video 1',
+          sourceHref: 'https://www.facebook.com/share/v/1CGYLJchVC/',
         },
         {
-          src: '/videos/worksite1_video_up_high.mp4',
-          title: 'Worksite Up High',
-          sourceHref: 'https://www.instagram.com/reel/DcksC1Yx2RA/',
+          facebookUrl: 'https://www.facebook.com/reel/1538884681259185',
+          title: 'Video 2',
+          sourceHref: 'https://www.facebook.com/share/v/1BoUyK4qLP/',
         },
       ],
-      text: 'Footage from the work site gives a closer look at the terrain and infrastructure affected farther downstream.',
+      text: 'In Video 1, workers at the hydropower plant in Mailung capture the debri flow as it approaches. This location is roughly 32 miles away from teh glacier, at an elevation of  ',
     },
   },
   {

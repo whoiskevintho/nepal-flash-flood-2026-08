@@ -27,8 +27,48 @@ function getYoutubeEmbedUrl(youtubeUrl: string) {
   return null
 }
 
+function getFacebookEmbedUrl(facebookUrl: string) {
+  try {
+    const parsed = new URL(facebookUrl)
+    const host = parsed.hostname.replace(/^www\./, '')
+
+    if (
+      host === 'facebook.com' ||
+      host === 'm.facebook.com' ||
+      host === 'fb.com' ||
+      host === 'fb.watch'
+    ) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookUrl)}&show_text=false`
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 function isYoutubeVideo(video: ChapterVideo): video is ChapterVideo & { youtubeUrl: string } {
   return Boolean(video.youtubeUrl)
+}
+
+function isFacebookVideo(video: ChapterVideo): video is ChapterVideo & { facebookUrl: string } {
+  return Boolean(video.facebookUrl)
+}
+
+function isFileVideo(video: ChapterVideo): video is ChapterVideo & { src: string } {
+  return Boolean(video.src)
+}
+
+function isPortraitEmbedUrl(url: string) {
+  try {
+    return /\/(?:reel|reels|shorts)\//i.test(new URL(url).pathname)
+  } catch {
+    return false
+  }
+}
+
+function getEmbedOrientationClass(url: string) {
+  return isPortraitEmbedUrl(url) ? 'is-portrait' : 'is-landscape'
 }
 
 function App() {
@@ -118,7 +158,7 @@ function App() {
       return
     }
 
-    if (isYoutubeVideo(nextVideo)) {
+    if (!isFileVideo(nextVideo)) {
       setActiveVideoIndex(nextIndex)
       setPendingVideoIndex(null)
       setIsVideoLoading(false)
@@ -256,8 +296,9 @@ function App() {
             ) : null}
             {activeVideo ? (
               <>
-                {activeVideo.sourceHref ? (
-                  <div className="video-source-row">
+                <div className="video-source-row">
+                  <span className="video-title">{activeVideo.title}</span>
+                  {activeVideo.sourceHref ? (
                     <a
                       className="detail-source-link"
                       href={activeVideo.sourceHref}
@@ -266,15 +307,23 @@ function App() {
                     >
                       Source
                     </a>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
                 <div className="video-frame">
                   {isYoutubeVideo(activeVideo) ? (
                     <iframe
-                      className="detail-youtube"
+                      className={`detail-youtube ${getEmbedOrientationClass(activeVideo.youtubeUrl)}`}
                       src={getYoutubeEmbedUrl(activeVideo.youtubeUrl) ?? undefined}
                       title={activeVideo.title}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  ) : isFacebookVideo(activeVideo) ? (
+                    <iframe
+                      className={`detail-facebook ${getEmbedOrientationClass(activeVideo.facebookUrl)}`}
+                      src={getFacebookEmbedUrl(activeVideo.facebookUrl) ?? undefined}
+                      title={activeVideo.title}
+                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
                       allowFullScreen
                     />
                   ) : (
@@ -288,7 +337,7 @@ function App() {
                       Your browser does not support the video tag.
                     </video>
                   )}
-                  {pendingVideo && !isYoutubeVideo(pendingVideo) ? (
+                  {pendingVideo && isFileVideo(pendingVideo) ? (
                     <video
                       aria-hidden="true"
                       className="video-preloader"

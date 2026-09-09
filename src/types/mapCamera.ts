@@ -23,10 +23,17 @@ export type ChapterVideo = {
   | {
       src: string
       youtubeUrl?: never
+      facebookUrl?: never
     }
   | {
       youtubeUrl: string
       src?: never
+      facebookUrl?: never
+    }
+  | {
+      facebookUrl: string
+      src?: never
+      youtubeUrl?: never
     }
 )
 
