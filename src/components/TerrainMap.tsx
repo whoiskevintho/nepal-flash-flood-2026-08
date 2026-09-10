@@ -333,7 +333,6 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
       maxZoom: 18,
       renderWorldCopies: false,
       attributionControl: false,
-      hash: 'camera',
     })
 
     map.addControl(

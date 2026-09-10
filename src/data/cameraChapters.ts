@@ -1,7 +1,5 @@
 import type { CameraChapter, MapOverlay } from '../types/mapCamera'
 
-// MapLibre's URL hash uses zoom/lat/lng/bearing/pitch.
-// Chapter centers use [lng, lat], so swap the coordinate order when copying from the hash.
 // Highlight phrases in detail.text with [[red:...]] or [[yellow:...]].
 export const cameraChapters = [
   {

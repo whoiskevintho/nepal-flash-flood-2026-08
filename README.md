@@ -60,8 +60,6 @@ Other scripts: `npm run build` (typecheck + production bundle), `npm run preview
 
 Chapters are defined in `src/data/cameraChapters.ts`. Each chapter has a camera (`center` as `[lng, lat]`, plus `zoom`, `pitch`, `bearing`, `elevationMeters`), short copy, and a `detail` block for modal text, videos, and optional before/after images.
 
-The map writes the current view to the URL hash as `zoom/lat/lng/bearing/pitch`. Swap lat/lng when you paste that into a chapter `center`, then set `elevationMeters` for the terrain height at that point.
-
 Distance views are optional: a second camera plus a GeoJSON line (see `public/data/distance_*.geojson`). Global overlays such as the glacier burst outline are listed in `globalMapOverlays`. Place and video labels come from `public/data/locations.geojson` and `public/data/video_locations.geojson`.
 
 Videos can be a YouTube URL, a Facebook URL, or a file under `public/` (`src: '/videos/...'`). Add `sourceHref` when you have the original source page.

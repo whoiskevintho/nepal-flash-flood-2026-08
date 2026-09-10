@@ -255,13 +255,6 @@ function App() {
             </article>
           ))}
         </div>
-
-        <p className="author-note">
-          Authoring tip: the URL hash is <code>zoom/lat/lng/bearing/pitch</code>.
-          Use it as <code>center: [lng, lat]</code>, <code>zoom</code>,{' '}
-          <code>bearing</code>, and <code>pitch</code>, then add{' '}
-          <code>elevationMeters</code> for the terrain center point.
-        </p>
       </section>
 
       {activeDetailChapter ? (
