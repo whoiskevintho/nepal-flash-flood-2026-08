@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 type HighlightColor = 'red' | 'yellow'
 
 const HIGHLIGHT_PATTERN = /\[\[(red|yellow):([\s\S]*?)\]\]/g
@@ -8,7 +10,7 @@ type HighlightedTextProps = {
 }
 
 export function HighlightedText({ text, className }: HighlightedTextProps) {
-  const parts: Array<string | JSX.Element> = []
+  const parts: Array<string | ReactNode> = []
   let lastIndex = 0
   let key = 0
 
