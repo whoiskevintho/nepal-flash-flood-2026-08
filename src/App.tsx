@@ -213,7 +213,7 @@ function App() {
         <p className="eyebrow">Interactive Story</p>
         <h1 id="map-title">Nepal Flash Flood</h1>
         <p>
-          Select chapters to fly to their views. Read More and view distances along the path of the flash flood.
+          Select chapters to fly to their views. Read more and view distances along the path of the flash flood.
         </p>
 
         <div className="chapter-list" aria-label="Story chapters">

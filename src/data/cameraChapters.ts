@@ -6,7 +6,7 @@ export const cameraChapters = [
     id: 'himalaya-overview',
     title: 'Glacier Collapse',
     location: 'Glacier Below Langtang Lirung Peak',
-    description: 'The Glacier below Langtang Lirung Peak burst, registering as a 5.2 seismic event.',
+    description: 'The Glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
     center: [85.52396, 28.28729],
     zoom: 13.68,
     pitch: 61,
@@ -26,7 +26,7 @@ export const cameraChapters = [
       // Add sourceHref to each video when you have the original web source URL.
       videos: [
       ],
-      text: 'At around 8:37am local Nepal time on 2026-08-26, part of the glacier below Langtang Lirung Peak breaks away, registering as a 5.2 seismic event.',
+      text: 'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, a section of the glacier beneath Langtang Lirung Peak collapsed, generating a seismic event measured at magnitude 5.2. The [[yellow:yellow]] area was traced from satellite imagery and represents the approximate extent of the ice and bedrock that detached during the collapse. The highlighted area measures approximately one mile across and half a mile wide.',
     },
   },
   {
@@ -63,7 +63,7 @@ export const cameraChapters = [
           sourceHref: 'https://x.com/MrGafish/status/2092547312518348820?s=46',
         },
       ],
-      text: 'By 9:00am, the debris flow had reached the Tibet/Nepal border crossing, travleing [[red:13 miles]] to get to this point. The first half of [[yellow:Video 1 & 2]] was captured by a CCTV camera pointed south west – at the main border crossing building. The second half is from a camera in the same location, looking north west up the Trishuli River. The footage is time stamped in China Standard Time, two hours ahead of local Nepal Time. ',
+      text: 'By 8:45am, the debris flow had reached the Tibet/Nepal border crossing, travleing [[red:13 miles]] to get to this point. The first half of [[yellow:Video 1 & 2]] was captured by a CCTV camera pointed south west, at the main border crossing building. The second half is from a camera in the same location, but looking north west up the Trishuli River. The footage is time stamped in China Standard Time, two hours and 15 minutesahead of local Nepal Time. ',
     },
   },
   {
@@ -104,7 +104,7 @@ export const cameraChapters = [
           sourceHref: 'https://www.facebook.com/share/v/1BoUyK4qLP/',
         },
       ], 
-      text: 'Workers and onlookers captured the debris flow as it rapidly approached and destroyed a hydropower site in Mailung – roughly [[red:32 miles]] down river from the glacier. In [[yellow:Video 1]], a worker at the hydropower films the appraoching flood from up river. [[yellow:Video 2]] is captured by an onlooker from a higher elevation on the left side of the Tishuli river, looking up river to the north east up river.',
+      text: 'Workers and onlookers captured the debris flow as it rapidly approached and destroyed a hydropower site in Mailung – roughly [[red:32 miles]] down river from the glacier. In [[yellow:Video 1]], a worker at the hydropower site films the appraoching flood from upstream. [[yellow:Video 2]] is captured by an onlooker from a higher elevation on the left side of the Tishuli river, looking north east and upstream.',
     },
   },
   {
@@ -145,7 +145,7 @@ export const cameraChapters = [
           sourceHref: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
         },
       ],
-      text: 'The town of Betrawati is located about [[red:39 miles]] down river from the glacier. [[yellow:Video 1]] is captured from a higher elevation north of town, looking south down river, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Video 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently rushes past and climbs 440 feet above the previous riverbank.',
+      text: 'The town of Betrawati is located about [[red:39 miles]] downstream from the glacier. [[yellow:Video 1]] is captured from a higher elevation north of town, looking south downstream, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Video 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently rushes past and climbs 440 feet above the previous riverbank.',
     },
   },
   {

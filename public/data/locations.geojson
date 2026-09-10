@@ -4,7 +4,7 @@
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
 "features": [
 { "type": "Feature", "properties": { "id": 1, "Location": "Mailung" }, "geometry": { "type": "Point", "coordinates": [ 85.207232746034251, 28.070187701108658 ] } },
-{ "type": "Feature", "properties": { "id": 2, "Location": "Glacier" }, "geometry": { "type": "Point", "coordinates": [ 85.528232832191961, 28.288135494904122 ] } },
+{ "type": "Feature", "properties": { "id": 2, "Location": "Glacier" }, "geometry": { "type": "Point", "coordinates": [ 85.534884519457037, 28.284148858619105 ] } },
 { "type": "Feature", "properties": { "id": 3, "Location": "Rasuwagadi" }, "geometry": { "type": "Point", "coordinates": [ 85.37701624138883, 28.277270766209504 ] } },
 { "type": "Feature", "properties": { "id": 4, "Location": "Trishuli" }, "geometry": { "type": "Point", "coordinates": [ 85.148431264228336, 27.923038886798498 ] } },
 { "type": "Feature", "properties": { "id": 5, "Location": "Betrawoti" }, "geometry": { "type": "Point", "coordinates": [ 85.18391317492825, 27.970816063203017 ] } }
