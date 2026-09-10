@@ -179,6 +179,21 @@
   line-height: 1.4;
 }
 
+.text-highlight {
+  color: #111;
+  padding: 0 0.12em;
+  font-weight: inherit;
+  border-radius: 2px;
+}
+
+.text-highlight-red {
+  background: #fecaca;
+}
+
+.text-highlight-yellow {
+  background: #fde047;
+}
+
 .author-note {
   padding-top: 2px;
   color: #555;

@@ -136,7 +136,7 @@ function getVideoLabelsLayer(): LayerSpecification {
     paint: {
       'text-color': '#ffd400',
       'text-halo-color': '#111111',
-      'text-halo-width': 1,
+      'text-halo-width': 1.5,
     },
   }
 }

@@ -2,10 +2,11 @@ import type { CameraChapter, MapOverlay } from '../types/mapCamera'
 
 // MapLibre's URL hash uses zoom/lat/lng/bearing/pitch.
 // Chapter centers use [lng, lat], so swap the coordinate order when copying from the hash.
+// Highlight phrases in detail.text with [[red:...]] or [[yellow:...]].
 export const cameraChapters = [
   {
     id: 'himalaya-overview',
-    title: 'Glacier Burst',
+    title: 'Glacier Collapse',
     location: 'Glacier Below Langtang Lirung Peak',
     description: 'The Glacier below Langtang Lirung Peak burst, registering as a 5.2 seismic event.',
     center: [85.52396, 28.28729],
@@ -27,12 +28,12 @@ export const cameraChapters = [
       // Add sourceHref to each video when you have the original web source URL.
       videos: [
       ],
-      text: 'At around 8:40am on 2026-08-26, part of the glacier below Langtang Lirung Peak breaks away, registering as a 5.2 seismic event.',
+      text: 'At around 8:37am local Nepal time on 2026-08-26, part of the glacier below Langtang Lirung Peak breaks away, registering as a 5.2 seismic event.',
     },
   },
   {
     id: 'border-crossing-rasu',
-    title: 'Border Crossing, CCTV',
+    title: 'Border crossing, CCTV',
     location: 'Rasuwagadhi',
     description: 'CCTV cameras capture debris flow destroy border crossing.',
     center: [85.367247, 28.259807],
@@ -64,14 +65,14 @@ export const cameraChapters = [
           sourceHref: 'https://x.com/MrGafish/status/2092547312518348820?s=46',
         },
       ],
-      text: 'By 9:00am, the debri flow had reach the Tibet/Nepal border crossing, travleing 13 miles to get to this point. CCTV cameras captured the destruction and are time stamped with Beijing time (+2)',
+      text: 'By 9:00am, the debris flow had reached the Tibet/Nepal border crossing, travleing [[red:13 miles]] to get to this point. The first half of [[yellow:Video 1 & 2]] was captured by a CCTV camera pointed south west – at the main border crossing building. The second half is from a camera in the same location, looking north west up the Trishuli River. The footage is time stamped in China Standard Time, two hours ahead of local Nepal Time. ',
     },
   },
   {
     id: 'work-site',
-    title: 'Hydropower work-site',
+    title: 'Hydropower site at Mailung',
     location: 'Mailung',
-    description: 'Videos capture hydropower site destroyed by debri flow.',
+    description: 'Videos capture hydropower site destroyed by debris flow.',
     center: [85.197469, 28.05221],
     zoom: 18,
     pitch: 35,
@@ -104,15 +105,15 @@ export const cameraChapters = [
           title: 'Video 2',
           sourceHref: 'https://www.facebook.com/share/v/1BoUyK4qLP/',
         },
-      ],
-      text: 'In Video 1, workers at the hydropower plant in Mailung capture the debri flow as it approaches. This location is roughly 32 miles away from teh glacier, at an elevation of  ',
+      ], 
+      text: 'Workers and onlookers captured the debris flow as it rapidly approached and destroyed a hydropower site in Mailung – roughly [[red:32 miles]] down river from the glacier. In [[yellow:Video 1]], a worker at the hydropower films the appraoching flood from up river. [[yellow:Video 2]] is captured by an onlooker from a higher elevation on the left side of the Tishuli river, looking up river to the north east up river.',
     },
   },
   {
     id: 'betrawati-bazaar',
     title: 'The town of Betrawati',
-    location: 'Betrawati Bazaar',
-    description: 'Videos taken above the town of Betrawati.',
+    location: 'Betrawati',
+    description: 'Videos taken of the town of Betrawati.',
     center: [85.170015, 27.948871],
     zoom: 18,
     pitch: 35, 
@@ -129,7 +130,7 @@ export const cameraChapters = [
       },
       overlay: {
         id: 'distance-glacier-to-work-site',
-        data: '/data/distance_glacier_to_worksite1.geojson',
+        data: '/data/distance_glacier_to_betrawati.geojson',
         lineColor: '#d71920',
       },
     },
@@ -137,16 +138,16 @@ export const cameraChapters = [
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
-          title: 'Betrawati Bazaar',
+          title: 'Video 1',
           sourceHref: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
-          title: 'Betrawati Bazaar',
+          title: 'Video 2',
           sourceHref: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
         },
       ],
-      text: 'Footage from above Betrawati Bazaar shows the town and the path of flood water farther downstream.',
+      text: 'The town of Betrawati is located about [[red:39 miles]] down river from the glacier. [[yellow:Video 1]] is captured from a higher elevation north of town, looking south down river, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Video 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently rushes past and climbs 440 feet above the previous riverbank.',
     },
   },
   {
@@ -170,7 +171,7 @@ export const cameraChapters = [
       },
       overlay: {
         id: 'distance-glacier-to-work-site',
-        data: '/data/distance_glacier_to_worksite1.geojson',
+        data: '/data/distance_glacier_to_trishuli.geojson',
         lineColor: '#d71920',
       },
     },
@@ -178,16 +179,16 @@ export const cameraChapters = [
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=P1AodkdPMck',
-          title: 'Betrawati Bazaar',
+          title: 'Video 1',
           sourceHref: 'https://www.youtube.com/watch?v=P1AodkdPMck',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
-          title: 'Betrawati Bazaar',
+          title: 'Video 2',
           sourceHref: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
         },
       ],
-      text: 'Footage from above Betrawati Bazaar shows the town and the path of flood water farther downstream.',
+      text: 'The town of Trishuli is located approximately [[red:44 miles]] downstream from the glacier. [[yellow:Video 1]] was captured from the roof of a Buddhist temple, looking north upstream, and shows the debris flow as it enters the town. [[yellow:Video 2]] is captured just north of the town and looks north upstream as the debris flow approaches the center of Trishuli.',
     },
   },
 ] satisfies CameraChapter[]

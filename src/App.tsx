@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { BeforeAfterSlider } from './components/BeforeAfterSlider'
+import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap } from './components/TerrainMap'
 import { cameraChapters, globalMapOverlays, initialCameraChapter } from './data/cameraChapters'
 import type { CameraChapter, ChapterVideo, MapOverlay } from './types/mapCamera'
@@ -372,7 +373,9 @@ function App() {
                 ) : null}
               </>
             ) : null}
-            <p>{activeDetailChapter.detail.text}</p>
+            <p>
+              <HighlightedText text={activeDetailChapter.detail.text} />
+            </p>
           </section>
         </div>
       ) : null}
