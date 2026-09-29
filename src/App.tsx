@@ -216,7 +216,7 @@ function App() {
           Select chapters to fly to their views. Read more and view distances along the path of the flash flood.
         </p>
         <p className="story-intro-red">
-          Maptiler: Monthly API request quota exceeded, fallback EOX satellite data is being used instead.
+          Maptiler: Monthly API request quota exceeded, fallback EOX satellite data is being used until rollover.
         </p>
 
         <div className="chapter-list" aria-label="Story chapters">
