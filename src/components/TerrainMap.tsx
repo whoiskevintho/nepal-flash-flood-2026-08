@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import { setWorkerUrl } from 'maplibre-gl'
 import type {
@@ -24,17 +24,9 @@ const VIDEO_LABELS_LAYER_ID = 'video-labels'
 const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
+const GOOGLE_MAPS_LOGO_SRC = '/images/GoogleMaps_Logo_WithLightOutline.svg'
 const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
-
-const satelliteSource: RasterSourceSpecification = {
-  type: 'raster',
-  tiles: [
-    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
-  ],
-  tileSize: 256,
-  attribution: 'Satellite imagery © MapTiler',
-  maxzoom: 22,
-}
 
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
@@ -48,6 +40,129 @@ const satelliteLayer: LayerSpecification = {
   id: 'satellite',
   type: 'raster',
   source: SATELLITE_SOURCE_ID,
+}
+
+async function createGoogleMapsSession() {
+  if (!GOOGLE_MAPS_KEY) {
+    console.error(
+      'Google Maps session request failed: VITE_GOOGLE_MAPS_API_KEY is not set.',
+    )
+    return
+  }
+
+  try {
+    const response = await fetch(
+      `https://tile.googleapis.com/v1/createSession?key=${GOOGLE_MAPS_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mapType: 'satellite',
+          language: 'en-US',
+          region: 'US',
+        }),
+      },
+    )
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error('Google Maps session request failed:', response.status, errorBody)
+      return
+    }
+
+    const sessionResponse = (await response.json()) as { session?: string }
+
+    if (!sessionResponse.session) {
+      console.error('Google Maps session request failed: response did not include a session token.')
+      return
+    }
+
+    return sessionResponse.session
+  } catch (error) {
+    console.error('Google Maps session request failed:', error)
+  }
+}
+
+function getGoogleSatelliteSource(session: string, apiKey: string): RasterSourceSpecification {
+  return {
+    type: 'raster',
+    tiles: [
+      `https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}?session=${session}&key=${apiKey}`,
+    ],
+    tileSize: 256,
+    maxzoom: 22,
+  }
+}
+
+function getTerrainStyle(session?: string): StyleSpecification {
+  const apiKey = GOOGLE_MAPS_KEY
+  const satellite = session && apiKey ? getGoogleSatelliteSource(session, apiKey) : undefined
+
+  return {
+    version: 8,
+    glyphs: `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${MAPTILER_KEY ?? ''}`,
+    sources: {
+      ...(satellite ? { [SATELLITE_SOURCE_ID]: satellite } : {}),
+      [TERRAIN_SOURCE_ID]: demSource,
+    },
+    layers: satellite ? [satelliteLayer] : [],
+  }
+}
+
+async function updateGoogleSatelliteAttribution(
+  map: maplibregl.Map,
+  copyrightElement: HTMLElement,
+  session: string,
+) {
+  const apiKey = GOOGLE_MAPS_KEY
+  const source = map.getSource(SATELLITE_SOURCE_ID)
+
+  if (!apiKey || !source) {
+    return
+  }
+
+  const bounds = map.getBounds()
+  const north = Math.min(89.999, bounds.getNorth())
+  const south = Math.max(-89.999, bounds.getSouth())
+  const east = Math.min(180, bounds.getEast())
+  const west = Math.max(-180, bounds.getWest())
+
+  if (north <= south || east <= west) {
+    return
+  }
+
+  const params = new URLSearchParams({
+    session,
+    key: apiKey,
+    zoom: String(Math.min(22, Math.max(0, Math.round(map.getZoom())))),
+    north: String(north),
+    south: String(south),
+    east: String(east),
+    west: String(west),
+  })
+
+  try {
+    const response = await fetch(`https://tile.googleapis.com/tile/v1/viewport?${params}`)
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error('Google Maps attribution request failed:', response.status, errorBody)
+      return
+    }
+
+    const body = (await response.json()) as { copyright?: string }
+
+    if (!body.copyright || !map.getSource(SATELLITE_SOURCE_ID)) {
+      return
+    }
+
+    source.attribution = body.copyright
+    copyrightElement.textContent = body.copyright
+  } catch (error) {
+    console.error('Google Maps attribution request failed:', error)
+  }
 }
 
 function getSafeOverlayId(overlay: MapOverlay) {
@@ -139,16 +254,6 @@ function getVideoLabelsLayer(): LayerSpecification {
       'text-halo-width': 1.5,
     },
   }
-}
-
-const terrainStyle: StyleSpecification = {
-  version: 8,
-  glyphs: `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${MAPTILER_KEY ?? ''}`,
-  sources: {
-    [SATELLITE_SOURCE_ID]: satelliteSource,
-    [TERRAIN_SOURCE_ID]: demSource,
-  },
-  layers: [satelliteLayer],
 }
 
 function removeRenderedOverlays(map: maplibregl.Map) {
@@ -302,7 +407,9 @@ type TerrainMapProps = {
 
 export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const copyrightRef = useRef<HTMLParagraphElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const [showGoogleAttribution, setShowGoogleAttribution] = useState(false)
   const cameraRef = useRef(camera)
   const overlaysRef = useRef(overlays)
   const terrainReadyRef = useRef(false)
@@ -320,57 +427,87 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
       return
     }
 
-    const initialCamera = cameraRef.current
+    const container = containerRef.current
+    let cancelled = false
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: terrainStyle,
-      center: initialCamera.center,
-      zoom: initialCamera.zoom,
-      pitch: initialCamera.pitch,
-      bearing: initialCamera.bearing,
-      maxPitch: 85,
-      maxZoom: 18,
-      renderWorldCopies: false,
-      attributionControl: false,
-    })
+    async function initializeMap() {
+      const session = await createGoogleMapsSession()
 
-    map.addControl(
-      new maplibregl.NavigationControl({
-        visualizePitch: true,
-        showCompass: true,
-        showZoom: true,
-      }),
-      'top-right',
-    )
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
+      if (cancelled || mapRef.current) {
+        return
+      }
 
-    map.once('load', () => {
-      setActiveOverlays(map, overlaysRef.current)
-      addPlaceLabels(map)
-      addVideoLabels(map)
-      map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
-      map.setSky({})
+      const initialCamera = cameraRef.current
+
+      const map = new maplibregl.Map({
+        container,
+        style: getTerrainStyle(session),
+        center: initialCamera.center,
+        zoom: initialCamera.zoom,
+        pitch: initialCamera.pitch,
+        bearing: initialCamera.bearing,
+        maxPitch: 85,
+        maxZoom: 18,
+        renderWorldCopies: false,
+        attributionControl: false,
+      })
 
       map.addControl(
-        new maplibregl.TerrainControl({
-          source: TERRAIN_SOURCE_ID,
-          exaggeration: TERRAIN_EXAGGERATION,
+        new maplibregl.NavigationControl({
+          visualizePitch: true,
+          showCompass: true,
+          showZoom: true,
         }),
         'top-right',
       )
 
-      map.once('idle', () => {
-        terrainReadyRef.current = true
-        map.stop()
-        jumpToChapter(map, cameraRef.current)
-      })
-    })
+      if (session) {
+        setShowGoogleAttribution(true)
 
-    mapRef.current = map
+        const refreshAttribution = () => {
+          const copyrightElement = copyrightRef.current
+
+          if (cancelled || !copyrightElement) {
+            return
+          }
+
+          void updateGoogleSatelliteAttribution(map, copyrightElement, session)
+        }
+
+        map.on('moveend', refreshAttribution)
+        map.once('load', refreshAttribution)
+      }
+
+      map.once('load', () => {
+        setActiveOverlays(map, overlaysRef.current)
+        addPlaceLabels(map)
+        addVideoLabels(map)
+        map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
+        map.setSky({})
+
+        map.addControl(
+          new maplibregl.TerrainControl({
+            source: TERRAIN_SOURCE_ID,
+            exaggeration: TERRAIN_EXAGGERATION,
+          }),
+          'top-right',
+        )
+
+        map.once('idle', () => {
+          terrainReadyRef.current = true
+          map.stop()
+          jumpToChapter(map, cameraRef.current)
+        })
+      })
+
+      mapRef.current = map
+    }
+
+    void initializeMap()
 
     return () => {
-      map.remove()
+      cancelled = true
+      mapRef.current?.remove()
       mapRef.current = null
     }
   }, [])
@@ -395,5 +532,19 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
     setActiveOverlays(map, overlays)
   }, [overlays])
 
-  return <div ref={containerRef} className="terrain-map" aria-label="3D terrain map of Nepal" />
+  return (
+    <div className="terrain-map">
+      <div ref={containerRef} className="terrain-map-canvas" aria-label="3D terrain map of Nepal" />
+      <div className="google-maps-attribution" hidden={!showGoogleAttribution}>
+        <img
+          className="google-maps-logo"
+          src={GOOGLE_MAPS_LOGO_SRC}
+          alt="Google Maps"
+          translate="no"
+          draggable={false}
+        />
+        <p ref={copyrightRef} className="google-maps-copyright" />
+      </div>
+    </div>
+  )
 }

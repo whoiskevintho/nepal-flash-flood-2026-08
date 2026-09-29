@@ -215,9 +215,6 @@ function App() {
         <p>
           Select chapters to fly to their views. Read more and view distances along the path of the flash flood.
         </p>
-        <p className="story-intro-red">
-          Maptiler: Monthly API request quota exceeded, account temporarily suspended. Map will not render, working on a fix.
-        </p>
 
         <div className="chapter-list" aria-label="Story chapters">
           {cameraChapters.map((chapter, index) => (

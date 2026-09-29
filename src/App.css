@@ -13,6 +13,56 @@
   height: 100%;
 }
 
+.terrain-map-canvas,
+.terrain-map .maplibregl-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.google-maps-attribution {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.google-maps-attribution[hidden] {
+  display: none;
+}
+
+.google-maps-logo {
+  display: block;
+  height: 18px;
+  width: auto;
+  margin: 10px 10px 5px 10px;
+  flex: none;
+}
+
+.google-maps-copyright {
+  margin: 0 10px 5px 0;
+  max-width: min(70vw, 640px);
+  padding: 2px 5px;
+  color: #1f1f1f;
+  background: rgb(255 255 255 / 70%);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.google-maps-copyright:empty {
+  display: none;
+}
+
 .map-panel {
   position: absolute;
   left: clamp(16px, 4vw, 48px);
