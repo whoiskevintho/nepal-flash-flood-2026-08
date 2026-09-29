@@ -26,7 +26,6 @@ const VIDEO_LABELS_LAYER_ID = 'video-labels'
 const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
-const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
@@ -38,14 +37,6 @@ const satelliteSource: RasterSourceSpecification = {
     'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
   maxzoom: 14,
 }
-
-// const demSource: RasterDEMSourceSpecification = {
-//   type: 'raster-dem',
-//   tiles: TERRARIUM_TILES,
-//   encoding: 'terrarium',
-//   tileSize: 256,
-//   maxzoom: 15,
-// }
 
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
