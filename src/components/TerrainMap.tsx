@@ -11,6 +11,8 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { MapCamera, MapOverlay } from '../types/mapCamera'
 
+import { Protocol } from 'pmtiles'
+
 setWorkerUrl(maplibreWorkerUrl)
 
 const SATELLITE_SOURCE_ID = 'satelliteSource'
@@ -29,19 +31,28 @@ const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrariu
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
   tiles: [
-    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
+    'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
   ],
   tileSize: 256,
-  attribution: 'Satellite imagery © MapTiler',
-  maxzoom: 22,
+  attribution:
+    'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
+  maxzoom: 14,
 }
+
+// const demSource: RasterDEMSourceSpecification = {
+//   type: 'raster-dem',
+//   tiles: TERRARIUM_TILES,
+//   encoding: 'terrarium',
+//   tileSize: 256,
+//   maxzoom: 15,
+// }
 
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
-  tiles: TERRARIUM_TILES,
+  url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
   encoding: 'terrarium',
   tileSize: 256,
-  maxzoom: 15,
+  maxzoom: 14,
 }
 
 const satelliteLayer: LayerSpecification = {
@@ -81,7 +92,7 @@ function getOverlayFillLayer(overlay: MapOverlay): LayerSpecification {
 function getOverlayOutlineLayer(overlay: MapOverlay): LayerSpecification {
   return {
     id: getOverlayOutlineLayerId(overlay),
-  type: 'line',
+    type: 'line',
     source: getOverlaySourceId(overlay),
     paint: {
       'line-color': overlay.lineColor ?? overlay.fillColor ?? '#d71920',
@@ -321,6 +332,9 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
     }
 
     const initialCamera = cameraRef.current
+
+    const protocol = new Protocol()
+    maplibregl.addProtocol('pmtiles', protocol.tile)
 
     const map = new maplibregl.Map({
       container: containerRef.current,
