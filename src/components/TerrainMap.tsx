@@ -26,6 +26,7 @@ const VIDEO_LABELS_LAYER_ID = 'video-labels'
 const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
+const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
@@ -38,12 +39,20 @@ const satelliteSource: RasterSourceSpecification = {
   maxzoom: 14,
 }
 
+// const demSource: RasterDEMSourceSpecification = {
+//   type: 'raster-dem',
+//   url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
+//   encoding: 'terrarium',
+//   tileSize: 256,
+//   maxzoom: 14,
+// }
+
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
-  url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
+  tiles: TERRARIUM_TILES,
   encoding: 'terrarium',
   tileSize: 256,
-  maxzoom: 14,
+  maxzoom: 15,
 }
 
 const satelliteLayer: LayerSpecification = {
