@@ -29,16 +29,16 @@ export const storyChapters = [
       elevationMeters: 4850,
     },
     end: {
-      center: [85.52396, 28.28729],
-      zoom: 14,
-      pitch: 61,
-      bearing: 126.5,
+      center: [85.51598, 28.29516],
+      zoom: 13.91,
+      pitch: 62,
+      bearing: 127.6,
       elevationMeters: 4850,
     },
     boxes: [
       {
         id: 'himalaya-overview-intro',
-        text: 'The Glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
+        text: 'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, the glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
         holdVh: 40,
         fadeVh: 18,
         gapVh: 20,
@@ -46,10 +46,24 @@ export const storyChapters = [
       },
       pinned(
         'himalaya-overview-detail',
-        'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, a section of the glacier beneath Langtang Lirung Peak collapsed, generating a seismic event measured at magnitude 5.2. The [[yellow:yellow]] area was traced from satellite imagery and represents the approximate extent of the ice and bedrock that detached during the collapse. The highlighted area measures approximately one mile across and half a mile wide, and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet – meaning the debris fell [[red:4,730 feet]] at the start of the slide.',
+        'The [[yellow:yellow]] area was traced from satellite imagery and represents the approximate extent of the ice and bedrock that detached during the collapse.',
         90,
         36,
       ),
+      pinned(
+        'himalaya-overview-detail-2',
+        'It measures approximately one mile across and half a mile wide and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet – meaning the debris fell [[red:4,730 feet]] at the start of the slide.',
+        90,
+        36,
+      ),
+      {
+        id: 'himalaya-beforeafter',
+        text: 'You can view before and after photos of the glacier area here.',
+        holdVh: 40,
+        fadeVh: 18,
+        gapVh: 20,
+        motion: 'rise',
+      },
     ],
     detail: {
       beforeAfter: {
@@ -117,7 +131,7 @@ export const storyChapters = [
   {
     id: 'work-site',
     title: 'Hydropower site at Mailung',
-    transitionMs: 2000,
+    transitionMs: 3000,
     start: {
       center: [85.197469, 28.05221],
       zoom: 18,

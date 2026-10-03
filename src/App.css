@@ -26,14 +26,14 @@
 .story-card {
   position: fixed;
   left: 50%;
-  bottom: 64px;
+  bottom: 128px;
   z-index: 2;
-  width: min(300px, calc(100vw - 32px));
+  width: min(600px, calc(100vw - 32px));
   max-height: calc(100svh - 96px);
   overflow: hidden;
   padding: 16px 16px 14px;
   color: #121212;
-  background: #fff;
+  background: #ffff;
   box-shadow: 0 18px 48px rgb(0 0 0 / 22%);
   transform: translateX(-50%);
   visibility: hidden;
@@ -49,7 +49,7 @@
 .story-card p:not(.eyebrow) {
   margin: 0;
   color: #222;
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   line-height: 1.45;
 }
 
