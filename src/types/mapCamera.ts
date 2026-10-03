@@ -16,6 +16,21 @@ export type MapOverlay = {
   lineColor?: string
 }
 
+export type TextBoxMotion = 'pin' | 'rise'
+
+export type TextBox = {
+  id: string
+  text: string
+  /** Viewport heights of scrolling while the box is fully visible. */
+  holdVh: number
+  /** Viewport heights used to fade in, and the same distance to fade out. */
+  fadeVh: number
+  /** Blank viewport heights after this box, before the next one. */
+  gapVh: number
+  /** `pin` stays at the bottom. `rise` moves up with the scroll. */
+  motion: TextBoxMotion
+}
+
 export type ChapterVideo = {
   title: string
   sourceHref?: string
@@ -37,17 +52,20 @@ export type ChapterVideo = {
     }
 )
 
-export type CameraChapter = MapCamera & {
+export type StoryChapter = {
   id: string
   title: string
-  description: string
-  location?: string
-  distance?: {
-    label: string
-    camera: MapCamera
-    overlay?: MapOverlay
-  }
-  detail: {
+  start: MapCamera
+  end: MapCamera
+  /**
+   * Milliseconds to fly from the previous chapter's end to this chapter's start.
+   * Omit on the first chapter.
+   */
+  transitionMs?: number
+  boxes: TextBox[]
+  overlays?: MapOverlay[]
+  /** Kept for a later pass. The scroll story reads `boxes`. */
+  detail?: {
     beforeAfter?: {
       before: {
         src: string
@@ -59,6 +77,5 @@ export type CameraChapter = MapCamera & {
       }
     }
     videos: ChapterVideo[]
-    text: string
   }
 }

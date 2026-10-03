@@ -1,379 +1,247 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { HighlightedText } from './components/HighlightedText'
-import { TerrainMap } from './components/TerrainMap'
-import { cameraChapters, globalMapOverlays, initialCameraChapter } from './data/cameraChapters'
-import type { CameraChapter, ChapterVideo, MapOverlay } from './types/mapCamera'
+import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
+import { globalMapOverlays, storyChapters } from './data/cameraChapters'
+import {
+  activeTextBox,
+  camerasNearlyEqual,
+  chapterHeightVh,
+  formatCameraSnippet,
+  lerpCamera,
+  parseCameraHash,
+  writeCameraHash,
+} from './lib/storyScroll'
+import type { MapCamera } from './types/mapCamera'
 
-function getYoutubeEmbedUrl(youtubeUrl: string) {
-  try {
-    const parsed = new URL(youtubeUrl)
-    const host = parsed.hostname.replace(/^www\./, '')
+const devMode = import.meta.env.DEV
 
-    if (host === 'youtu.be') {
-      const id = parsed.pathname.split('/').filter(Boolean)[0]
-      return id ? `https://www.youtube.com/embed/${id}` : null
+type StoryPosition = {
+  index: number
+  progress: number
+  camera: MapCamera
+}
+
+function locateStory(sections: Array<HTMLElement | null>, scrollY: number): StoryPosition {
+  let index = 0
+
+  for (let i = 0; i < sections.length; i += 1) {
+    const section = sections[i]
+
+    if (section && scrollY >= section.offsetTop) {
+      index = i
     }
-
-    if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
-      const id =
-        parsed.searchParams.get('v') ?? parsed.pathname.match(/\/(?:embed|shorts)\/([^/]+)/)?.[1]
-      return id ? `https://www.youtube.com/embed/${id}` : null
-    }
-  } catch {
-    return null
   }
 
-  return null
-}
+  const section = sections[index]
+  const chapter = storyChapters[index]
+  const height = section?.offsetHeight ?? 0
+  const offset = scrollY - (section?.offsetTop ?? 0)
+  const progress = height > 0 ? Math.min(Math.max(offset / height, 0), 1) : 0
 
-function getFacebookEmbedUrl(facebookUrl: string) {
-  try {
-    const parsed = new URL(facebookUrl)
-    const host = parsed.hostname.replace(/^www\./, '')
-
-    if (
-      host === 'facebook.com' ||
-      host === 'm.facebook.com' ||
-      host === 'fb.com' ||
-      host === 'fb.watch'
-    ) {
-      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookUrl)}&show_text=false`
-    }
-  } catch {
-    return null
-  }
-
-  return null
-}
-
-function isYoutubeVideo(video: ChapterVideo): video is ChapterVideo & { youtubeUrl: string } {
-  return Boolean(video.youtubeUrl)
-}
-
-function isFacebookVideo(video: ChapterVideo): video is ChapterVideo & { facebookUrl: string } {
-  return Boolean(video.facebookUrl)
-}
-
-function isFileVideo(video: ChapterVideo): video is ChapterVideo & { src: string } {
-  return Boolean(video.src)
-}
-
-function isPortraitEmbedUrl(url: string) {
-  try {
-    return /\/(?:reel|reels|shorts)\//i.test(new URL(url).pathname)
-  } catch {
-    return false
+  return {
+    index,
+    progress,
+    camera: lerpCamera(chapter.start, chapter.end, progress),
   }
 }
 
-function getEmbedOrientationClass(url: string) {
-  return isPortraitEmbedUrl(url) ? 'is-portrait' : 'is-landscape'
+function transitionMs(from: number, to: number) {
+  if (Math.abs(to - from) !== 1) {
+    return 0
+  }
+
+  const arriving = storyChapters[Math.max(from, to)]
+  return arriving.transitionMs ?? 0
 }
 
 function App() {
-  const [selectedChapterId, setSelectedChapterId] = useState(initialCameraChapter.id)
-  const [activeDistanceChapterId, setActiveDistanceChapterId] = useState<string | null>(null)
-  const [activeDetailChapterId, setActiveDetailChapterId] = useState<string | null>(null)
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0)
-  const [pendingVideoIndex, setPendingVideoIndex] = useState<number | null>(null)
-  const [isVideoLoading, setIsVideoLoading] = useState(false)
-  const isVideoLoadingRef = useRef(false)
+  const [authoredCamera] = useState(() => (devMode ? parseCameraHash(window.location.hash) : null))
+  const [authoring, setAuthoring] = useState(Boolean(authoredCamera))
+  const [chapterIndex, setChapterIndex] = useState(0)
+  const mapRef = useRef<TerrainMapHandle>(null)
+  const readoutRef = useRef<HTMLPreElement>(null)
+  const sectionRefs = useRef<Array<HTMLElement | null>>([])
+  const boxRefs = useRef<Record<string, HTMLElement | null>>({})
+  const authoringRef = useRef(Boolean(authoredCamera))
+  const renderRef = useRef<() => void>(() => {})
+  const cameraState = useRef({
+    ready: false,
+    chapter: -1,
+    flightEndsAt: 0,
+    applied: null as MapCamera | null,
+  })
 
-  const selectedChapter: CameraChapter =
-    cameraChapters.find((chapter) => chapter.id === selectedChapterId) ?? initialCameraChapter
-  const activeDistanceChapter: CameraChapter | undefined = cameraChapters.find(
-    (chapter) => chapter.id === activeDistanceChapterId,
+  const overlays = useMemo(
+    () => [...globalMapOverlays, ...(storyChapters[chapterIndex].overlays ?? [])],
+    [chapterIndex],
   )
-  const activeDetailChapter: CameraChapter | undefined = cameraChapters.find(
-    (chapter) => chapter.id === activeDetailChapterId,
-  )
-  const activeCamera = activeDistanceChapter?.distance?.camera ?? selectedChapter
-  const activeOverlays = useMemo(() => {
-    const overlays: MapOverlay[] = [...globalMapOverlays]
-
-    if (activeDistanceChapter?.distance?.overlay) {
-      overlays.push(activeDistanceChapter.distance.overlay)
-    }
-
-    return overlays
-  }, [activeDistanceChapter])
-  const activeVideos: CameraChapter['detail']['videos'] = activeDetailChapter?.detail.videos ?? []
-  const activeVideo = activeVideos[activeVideoIndex]
-  const pendingVideo = pendingVideoIndex === null ? undefined : activeVideos[pendingVideoIndex]
-  const hasMultipleVideos = activeVideos.length > 1
 
   useEffect(() => {
-    if (!activeDetailChapter) {
-      return
-    }
+    let frame = 0
+    let flightTimer = 0
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        closeChapterDetail()
+    const requestFrame = () => {
+      if (!frame) {
+        frame = window.requestAnimationFrame(render)
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    const moveCamera = (position: StoryPosition) => {
+      const state = cameraState.current
+
+      if (!state.ready || authoringRef.current) {
+        return
+      }
+
+      const now = performance.now()
+      const previous = state.chapter
+      state.chapter = position.index
+
+      if (previous !== position.index && previous !== -1) {
+        const duration = transitionMs(previous, position.index)
+
+        if (duration > 0) {
+          mapRef.current?.flyTo(position.camera, duration)
+          state.applied = position.camera
+          state.flightEndsAt = now + duration
+          window.clearTimeout(flightTimer)
+          flightTimer = window.setTimeout(requestFrame, duration + 16)
+          return
+        }
+      }
+
+      if (previous === position.index && now < state.flightEndsAt) {
+        return
+      }
+
+      state.flightEndsAt = 0
+
+      if (state.applied && camerasNearlyEqual(state.applied, position.camera)) {
+        return
+      }
+
+      state.applied = position.camera
+      mapRef.current?.jumpTo(position.camera)
+    }
+
+    const render = () => {
+      frame = 0
+      const position = locateStory(sectionRefs.current, window.scrollY)
+      const chapter = storyChapters[position.index]
+      const section = sectionRefs.current[position.index]
+      const totalVh = chapterHeightVh(chapter.boxes)
+      const pxPerVh = section && totalVh > 0 ? section.offsetHeight / totalVh : 0
+      const active = activeTextBox(chapter.boxes, position.progress * totalVh, pxPerVh)
+
+      for (const item of storyChapters) {
+        for (const box of item.boxes) {
+          const node = boxRefs.current[box.id]
+
+          if (!node) {
+            continue
+          }
+
+          const visible = active?.id === box.id && active.opacity > 0
+          node.style.opacity = visible ? String(active.opacity) : '0'
+          node.style.visibility = visible ? 'visible' : 'hidden'
+          node.style.transform = `translateX(-50%) translateY(${visible ? -active.risePx : 0}px)`
+          node.setAttribute('aria-hidden', visible ? 'false' : 'true')
+        }
+      }
+
+      setChapterIndex(position.index)
+      moveCamera(position)
+
+      if (readoutRef.current && !authoringRef.current) {
+        readoutRef.current.textContent = formatCameraSnippet(position.camera)
+      }
+    }
+
+    renderRef.current = render
+    requestFrame()
+    window.addEventListener('scroll', requestFrame, { passive: true })
+    window.addEventListener('resize', requestFrame)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('scroll', requestFrame)
+      window.removeEventListener('resize', requestFrame)
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(flightTimer)
     }
-  }, [activeDetailChapter])
-
-  function openChapterDetail(chapterId: string) {
-    setActiveDetailChapterId(chapterId)
-    setActiveVideoIndex(0)
-    setPendingVideoIndex(null)
-    setIsVideoLoading(false)
-    isVideoLoadingRef.current = false
-  }
-
-  function selectChapter(chapterId: string) {
-    setSelectedChapterId(chapterId)
-    setActiveDistanceChapterId(null)
-  }
-
-  function showDistance(chapter: CameraChapter) {
-    if (!chapter.distance) {
-      return
-    }
-
-    setSelectedChapterId(chapter.id)
-    setActiveDistanceChapterId(chapter.id)
-    closeChapterDetail()
-  }
-
-  function closeChapterDetail() {
-    setActiveDetailChapterId(null)
-    setPendingVideoIndex(null)
-    setIsVideoLoading(false)
-    isVideoLoadingRef.current = false
-  }
-
-  function requestVideoIndex(nextIndex: number) {
-    const nextVideo = activeVideos[nextIndex]
-
-    if (isVideoLoadingRef.current || nextIndex === activeVideoIndex || !nextVideo) {
-      return
-    }
-
-    if (!isFileVideo(nextVideo)) {
-      setActiveVideoIndex(nextIndex)
-      setPendingVideoIndex(null)
-      setIsVideoLoading(false)
-      isVideoLoadingRef.current = false
-      return
-    }
-
-    isVideoLoadingRef.current = true
-    setIsVideoLoading(true)
-    setPendingVideoIndex(nextIndex)
-  }
-
-  function showPendingVideo(videoIndex: number) {
-    if (pendingVideoIndex !== videoIndex) {
-      return
-    }
-
-    setActiveVideoIndex(videoIndex)
-    setPendingVideoIndex(null)
-    setIsVideoLoading(false)
-    isVideoLoadingRef.current = false
-  }
-
-  function cancelPendingVideo(videoIndex: number) {
-    if (pendingVideoIndex !== videoIndex) {
-      return
-    }
-
-    setPendingVideoIndex(null)
-    setIsVideoLoading(false)
-    isVideoLoadingRef.current = false
-  }
-
-  function showPreviousVideo() {
-    const previousIndex = activeVideoIndex === 0 ? activeVideos.length - 1 : activeVideoIndex - 1
-
-    requestVideoIndex(previousIndex)
-  }
-
-  function showNextVideo() {
-    const nextIndex = activeVideoIndex === activeVideos.length - 1 ? 0 : activeVideoIndex + 1
-
-    requestVideoIndex(nextIndex)
-  }
+  }, [])
 
   return (
     <main className="app-shell">
-      <TerrainMap camera={activeCamera} overlays={activeOverlays} />
+      <TerrainMap
+        ref={mapRef}
+        getCamera={() => authoredCamera ?? locateStory(sectionRefs.current, window.scrollY).camera}
+        overlays={overlays}
+        interactive={devMode}
+        initialAuthoring={Boolean(authoredCamera)}
+        onReady={() => {
+          cameraState.current = { ready: true, chapter: -1, flightEndsAt: 0, applied: null }
+          renderRef.current()
+        }}
+        onUserControl={() => {
+          authoringRef.current = true
+          setAuthoring(true)
+        }}
+        onCameraLive={(camera) => {
+          if (readoutRef.current) {
+            readoutRef.current.textContent = formatCameraSnippet(camera)
+          }
+        }}
+        onCameraCommit={writeCameraHash}
+      />
 
-      <section className="map-panel story-panel" aria-labelledby="map-title">
-        <p className="eyebrow">Interactive Story</p>
-        <h1 id="map-title">Nepal Flash Flood</h1>
-        <p>
-          Select chapters to fly to their views. Read more and view distances along the path of the flash flood.
-        </p>
-        <p className="story-intro-red">
-          Maptiler: Monthly API request quota exceeded, fallback EOX satellite data is being used until rollover.
-        </p>
-
-        <div className="chapter-list" aria-label="Story chapters">
-          {cameraChapters.map((chapter, index) => (
-            <article
-              className={`chapter-card ${chapter.id === selectedChapter.id ? 'active' : ''}`}
-              key={chapter.id}
-            >
-              <button
-                type="button"
-                className="chapter-button"
-                aria-pressed={chapter.id === selectedChapter.id}
-                onClick={() => selectChapter(chapter.id)}
-              >
-                <span className="chapter-kicker">Chapter {index + 1}</span>
-                <span className="chapter-title-row">
-                  <span className="chapter-title">{chapter.title}</span>
-                </span>
-                <span className="chapter-description">{chapter.description}</span>
-              </button>
-              <div className="chapter-actions">
-                <button
-                  type="button"
-                  className="read-more-button"
-                  onClick={() => openChapterDetail(chapter.id)}
-                >
-                  Read More
-                </button>
-                {chapter.distance ? (
-                  <button
-                    type="button"
-                    className="distance-button"
-                    onClick={() => showDistance(chapter)}
-                  >
-                    {chapter.distance.label}
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {activeDetailChapter ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={closeChapterDetail}
-        >
+      <div className="story-track">
+        {storyChapters.map((chapter, index) => (
           <section
-            className="detail-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="detail-modal-title"
-            onClick={(event) => event.stopPropagation()}
+            key={chapter.id}
+            className="story-chapter"
+            style={{ height: `${chapterHeightVh(chapter.boxes)}vh` }}
+            aria-label={chapter.title}
+            ref={(node) => {
+              sectionRefs.current[index] = node
+            }}
+          />
+        ))}
+      </div>
+
+      {storyChapters.flatMap((chapter) =>
+        chapter.boxes.map((box) => (
+          <article
+            key={box.id}
+            className="story-card"
+            aria-hidden="true"
+            ref={(node) => {
+              boxRefs.current[box.id] = node
+            }}
           >
-            <div className="detail-modal-header">
-              <p className="eyebrow">{activeDetailChapter.location ?? 'Chapter Detail'}</p>
-              <button
-                type="button"
-                className="modal-close-button"
-                aria-label="Close detail modal"
-                onClick={closeChapterDetail}
-              >
-                Close
-              </button>
-            </div>
-            <h2 id="detail-modal-title">{activeDetailChapter.title}</h2>
-            {activeDetailChapter.detail.beforeAfter ? (
-              <BeforeAfterSlider
-                before={activeDetailChapter.detail.beforeAfter.before}
-                after={activeDetailChapter.detail.beforeAfter.after}
-              />
-            ) : null}
-            {activeVideo ? (
-              <>
-                <div className="video-source-row">
-                  <span className="video-title">{activeVideo.title}</span>
-                  {activeVideo.sourceHref ? (
-                    <a
-                      className="detail-source-link"
-                      href={activeVideo.sourceHref}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Source
-                    </a>
-                  ) : null}
-                </div>
-                <div className="video-frame">
-                  {isYoutubeVideo(activeVideo) ? (
-                    <iframe
-                      className={`detail-youtube ${getEmbedOrientationClass(activeVideo.youtubeUrl)}`}
-                      src={getYoutubeEmbedUrl(activeVideo.youtubeUrl) ?? undefined}
-                      title={activeVideo.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  ) : isFacebookVideo(activeVideo) ? (
-                    <iframe
-                      className={`detail-facebook ${getEmbedOrientationClass(activeVideo.facebookUrl)}`}
-                      src={getFacebookEmbedUrl(activeVideo.facebookUrl) ?? undefined}
-                      title={activeVideo.title}
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      className="detail-video"
-                      controls
-                      preload="auto"
-                      src={activeVideo.src}
-                      title={activeVideo.title}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  )}
-                  {pendingVideo && isFileVideo(pendingVideo) ? (
-                    <video
-                      aria-hidden="true"
-                      className="video-preloader"
-                      muted
-                      preload="auto"
-                      src={pendingVideo.src}
-                      onCanPlay={() => {
-                        if (pendingVideoIndex !== null) {
-                          showPendingVideo(pendingVideoIndex)
-                        }
-                      }}
-                      onError={() => {
-                        if (pendingVideoIndex !== null) {
-                          cancelPendingVideo(pendingVideoIndex)
-                        }
-                      }}
-                    />
-                  ) : null}
-                </div>
-                {hasMultipleVideos ? (
-                  <div className="video-navigation" aria-label="Video navigation">
-                    <button type="button" disabled={isVideoLoading} onClick={showPreviousVideo}>
-                      Prev Video
-                    </button>
-                    <span>
-                      {isVideoLoading ? 'Loading' : activeVideoIndex + 1} of {activeVideos.length}
-                    </span>
-                    <button type="button" disabled={isVideoLoading} onClick={showNextVideo}>
-                      Next Video
-                    </button>
-                  </div>
-                ) : null}
-              </>
-            ) : null}
+            <p className="eyebrow">{chapter.title}</p>
             <p>
-              <HighlightedText text={activeDetailChapter.detail.text} />
+              <HighlightedText text={box.text} />
             </p>
-          </section>
-        </div>
+          </article>
+        )),
+      )}
+
+      {devMode ? (
+        <aside className="camera-readout">
+          <p className="eyebrow">Camera</p>
+          <pre ref={readoutRef}>{formatCameraSnippet(authoredCamera ?? storyChapters[0].start)}</pre>
+          {authoring ? (
+            <p className="camera-readout-note">
+              Scroll camera is paused. Remove the hash from the address bar and reload to follow the
+              story.
+            </p>
+          ) : (
+            <p className="camera-readout-note">
+              Drag the map to pause the story and copy this camera into a chapter.
+            </p>
+          )}
+        </aside>
       ) : null}
     </main>
   )

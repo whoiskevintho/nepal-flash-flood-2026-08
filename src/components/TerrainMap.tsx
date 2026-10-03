@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import { setWorkerUrl } from 'maplibre-gl'
 import type {
@@ -9,6 +9,7 @@ import type {
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { flightCamera } from '../lib/storyScroll'
 import type { MapCamera, MapOverlay } from '../types/mapCamera'
 
 import { Protocol } from 'pmtiles'
@@ -26,6 +27,7 @@ const VIDEO_LABELS_LAYER_ID = 'video-labels'
 const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
+const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
@@ -38,12 +40,20 @@ const satelliteSource: RasterSourceSpecification = {
   maxzoom: 14,
 }
 
+// const demSource: RasterDEMSourceSpecification = {
+//   type: 'raster-dem',
+//   url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
+//   encoding: 'terrarium',
+//   tileSize: 256,
+//   maxzoom: 14,
+// }
+
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
-  url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
+  tiles: TERRARIUM_TILES,
   encoding: 'terrarium',
   tileSize: 256,
-  maxzoom: 14,
+  maxzoom: 15,
 }
 
 const satelliteLayer: LayerSpecification = {
@@ -249,18 +259,6 @@ function getElevatedChapterCamera(chapter: MapCamera) {
   }
 }
 
-function getCurrentElevatedCamera(map: maplibregl.Map) {
-  const center = map.getCenter()
-
-  return {
-    center: [center.lng, center.lat] as [number, number],
-    zoom: map.getZoom(),
-    pitch: map.getPitch(),
-    bearing: map.getBearing(),
-    elevation: map.getCenterElevation(),
-  }
-}
-
 function jumpToChapter(map: maplibregl.Map, chapter: MapCamera) {
   if (!map.getTerrain()) {
     map.jumpTo(getChapterCamera(chapter))
@@ -272,63 +270,129 @@ function jumpToChapter(map: maplibregl.Map, chapter: MapCamera) {
   map.jumpTo(getElevatedChapterCamera(chapter))
 }
 
-function flyToChapter(map: maplibregl.Map, chapter: MapCamera) {
-  map.stop()
+function readMapCamera(map: maplibregl.Map): MapCamera {
+  const center = map.getCenter()
 
-  if (!map.getTerrain()) {
-    map.flyTo({
-      ...getChapterCamera(chapter),
-      duration: 1800,
-      essential: true,
-    })
-    return
+  return {
+    center: [center.lng, center.lat],
+    zoom: map.getZoom(),
+    pitch: map.getPitch(),
+    bearing: map.getBearing(),
+    elevationMeters: map.getCenterElevation(),
   }
+}
 
-  const startCamera = getCurrentElevatedCamera(map)
-
-  map.setCenterClampedToGround(false)
-  map.setCenterElevation(chapter.elevationMeters)
-  map.jumpTo(startCamera)
-  map.flyTo({
-    ...getElevatedChapterCamera(chapter),
-    duration: 1800,
-    essential: true,
-    freezeElevation: true,
-  })
+export type TerrainMapHandle = {
+  jumpTo: (camera: MapCamera) => void
+  flyTo: (camera: MapCamera, durationMs: number) => void
 }
 
 type TerrainMapProps = {
-  camera: MapCamera
+  /** Read once, when the map is created and again when terrain is ready. */
+  getCamera: () => MapCamera
   overlays?: MapOverlay[]
+  interactive?: boolean
+  /** Ignore story camera moves from the start, for a camera restored from the URL hash. */
+  initialAuthoring?: boolean
+  /** Called once terrain is loaded and the map accepts camera moves. */
+  onReady?: () => void
+  onUserControl?: () => void
+  onCameraLive?: (camera: MapCamera) => void
+  onCameraCommit?: (camera: MapCamera) => void
 }
 
-export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
+export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function TerrainMap(
+  {
+    getCamera,
+    overlays = [],
+    interactive = false,
+    initialAuthoring = false,
+    onReady,
+    onUserControl,
+    onCameraLive,
+    onCameraCommit,
+  },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const cameraRef = useRef(camera)
   const overlaysRef = useRef(overlays)
-  const terrainReadyRef = useRef(false)
-
-  useEffect(() => {
-    cameraRef.current = camera
-  }, [camera])
+  const readyRef = useRef(false)
+  const authoringRef = useRef(initialAuthoring)
+  const callbacksRef = useRef({ getCamera, onReady, onUserControl, onCameraLive, onCameraCommit })
+  const flightFrameRef = useRef(0)
 
   useEffect(() => {
     overlaysRef.current = overlays
   }, [overlays])
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) {
+    callbacksRef.current = { getCamera, onReady, onUserControl, onCameraLive, onCameraCommit }
+  })
+
+  useImperativeHandle(ref, () => {
+    const cancelFlight = () => {
+      window.cancelAnimationFrame(flightFrameRef.current)
+      flightFrameRef.current = 0
+    }
+
+    const usableMap = () => {
+      const map = mapRef.current
+      return map && readyRef.current && !authoringRef.current ? map : null
+    }
+
+    return {
+      jumpTo(nextCamera: MapCamera) {
+        const map = usableMap()
+
+        if (map) {
+          cancelFlight()
+          jumpToChapter(map, nextCamera)
+        }
+      },
+      flyTo(nextCamera: MapCamera, durationMs: number) {
+        const map = usableMap()
+
+        if (!map) {
+          return
+        }
+
+        cancelFlight()
+        const from = readMapCamera(map)
+        const viewportPx = Math.max(map.getContainer().clientWidth, map.getContainer().clientHeight)
+        const startedAt = performance.now()
+
+        const step = (now: number) => {
+          const t = Math.min((now - startedAt) / durationMs, 1)
+
+          if (!usableMap()) {
+            flightFrameRef.current = 0
+            return
+          }
+
+          jumpToChapter(map, flightCamera(from, nextCamera, t, viewportPx))
+          flightFrameRef.current = t < 1 ? window.requestAnimationFrame(step) : 0
+        }
+
+        flightFrameRef.current = window.requestAnimationFrame(step)
+      },
+    }
+  })
+
+  useEffect(() => {
+    const container = containerRef.current
+
+    if (!container || mapRef.current) {
       return
     }
 
-    const initialCamera = cameraRef.current
+    const initialCamera = callbacksRef.current.getCamera()
 
     const protocol = new Protocol()
     maplibregl.addProtocol('pmtiles', protocol.tile)
 
     const map = new maplibregl.Map({
-      container: containerRef.current,
+      container,
       style: terrainStyle,
       center: initialCamera.center,
       zoom: initialCamera.zoom,
@@ -336,64 +400,95 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
       bearing: initialCamera.bearing,
       maxPitch: 85,
       maxZoom: 18,
+      interactive,
+      scrollZoom: false,
       renderWorldCopies: false,
       attributionControl: false,
     })
 
-    map.addControl(
-      new maplibregl.NavigationControl({
-        visualizePitch: true,
-        showCompass: true,
-        showZoom: true,
-      }),
-      'top-right',
-    )
+    if (interactive) {
+      map.addControl(
+        new maplibregl.NavigationControl({
+          visualizePitch: true,
+          showCompass: true,
+          showZoom: true,
+        }),
+        'top-right',
+      )
+    }
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
+    map.on('movestart', (event) => {
+      if (!event.originalEvent || authoringRef.current) {
+        return
+      }
+
+      authoringRef.current = true
+      callbacksRef.current.onUserControl?.()
+    })
+
+    map.on('move', () => {
+      if (!authoringRef.current) {
+        return
+      }
+
+      callbacksRef.current.onCameraLive?.(readMapCamera(map))
+    })
+
+    map.on('moveend', () => {
+      if (!authoringRef.current) {
+        return
+      }
+
+      const liveCamera = readMapCamera(map)
+      callbacksRef.current.onCameraLive?.(liveCamera)
+      callbacksRef.current.onCameraCommit?.(liveCamera)
+    })
+
     map.once('load', () => {
-      setActiveOverlays(map, overlaysRef.current)
       addPlaceLabels(map)
       addVideoLabels(map)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
       map.setSky({})
 
-      map.addControl(
-        new maplibregl.TerrainControl({
-          source: TERRAIN_SOURCE_ID,
-          exaggeration: TERRAIN_EXAGGERATION,
-        }),
-        'top-right',
-      )
+      if (interactive) {
+        map.addControl(
+          new maplibregl.TerrainControl({
+            source: TERRAIN_SOURCE_ID,
+            exaggeration: TERRAIN_EXAGGERATION,
+          }),
+          'top-right',
+        )
+      }
 
       map.once('idle', () => {
-        terrainReadyRef.current = true
-        map.stop()
-        jumpToChapter(map, cameraRef.current)
+        readyRef.current = true
+        map.resize()
+        setActiveOverlays(map, overlaysRef.current)
+        jumpToChapter(map, callbacksRef.current.getCamera())
+        callbacksRef.current.onReady?.()
+
+        map.once('idle', () => {
+          container.classList.add('is-ready')
+        })
+        map.triggerRepaint()
       })
     })
 
     mapRef.current = map
 
     return () => {
+      window.cancelAnimationFrame(flightFrameRef.current)
       map.remove()
       mapRef.current = null
+      readyRef.current = false
     }
-  }, [])
+  }, [interactive])
 
   useEffect(() => {
     const map = mapRef.current
 
-    if (!map || !terrainReadyRef.current) {
-      return
-    }
-
-    flyToChapter(map, camera)
-  }, [camera])
-
-  useEffect(() => {
-    const map = mapRef.current
-
-    if (!map || !terrainReadyRef.current) {
+    if (!map || !readyRef.current) {
       return
     }
 
@@ -401,4 +496,4 @@ export function TerrainMap({ camera, overlays = [] }: TerrainMapProps) {
   }, [overlays])
 
   return <div ref={containerRef} className="terrain-map" aria-label="3D terrain map of Nepal" />
-}
+})
