@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
@@ -7,158 +7,161 @@ import {
   activeTextBox,
   camerasNearlyEqual,
   chapterHeightVh,
+  flightCamera,
   formatCameraSnippet,
   lerpCamera,
   parseCameraHash,
   writeCameraHash,
 } from './lib/storyScroll'
-import type { MapCamera } from './types/mapCamera'
+import type { MapCamera, MapOverlay } from './types/mapCamera'
 
 const devMode = import.meta.env.DEV
 
-type StoryPosition = {
-  index: number
-  progress: number
-  camera: MapCamera
-}
+function overlaysFor(chapterId: string): MapOverlay[] {
+  const chapter = storyChapters.find((item) => item.id === chapterId) ?? storyChapters[0]
 
-function locateStory(sections: Array<HTMLElement | null>, scrollY: number): StoryPosition {
-  let index = 0
-
-  for (let i = 0; i < sections.length; i += 1) {
-    const section = sections[i]
-
-    if (section && scrollY >= section.offsetTop) {
-      index = i
-    }
-  }
-
-  const section = sections[index]
-  const chapter = storyChapters[index]
-  const height = section?.offsetHeight ?? 0
-  const offset = scrollY - (section?.offsetTop ?? 0)
-  const progress = height > 0 ? Math.min(Math.max(offset / height, 0), 1) : 0
-
-  return {
-    index,
-    progress,
-    camera: lerpCamera(chapter.start, chapter.end, progress),
-  }
-}
-
-function transitionMs(from: number, to: number) {
-  if (Math.abs(to - from) !== 1) {
-    return 0
-  }
-
-  const arriving = storyChapters[Math.max(from, to)]
-  return arriving.transitionMs ?? 0
+  return [...globalMapOverlays, ...(chapter.overlays ?? [])]
 }
 
 function App() {
-  const [authoredCamera] = useState(() => (devMode ? parseCameraHash(window.location.hash) : null))
-  const [authoring, setAuthoring] = useState(Boolean(authoredCamera))
-  const [chapterIndex, setChapterIndex] = useState(0)
+  const authoredCamera = devMode ? parseCameraHash(window.location.hash) : null
+  const initialCamera = authoredCamera ?? storyChapters[0].start
   const mapRef = useRef<TerrainMapHandle>(null)
   const readoutRef = useRef<HTMLPreElement>(null)
-  const sectionRefs = useRef<Array<HTMLElement | null>>([])
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const boxRefs = useRef<Record<string, HTMLElement | null>>({})
+  const chapterIdRef = useRef(storyChapters[0].id)
   const authoringRef = useRef(Boolean(authoredCamera))
-  const renderRef = useRef<() => void>(() => {})
-  const cameraState = useRef({
-    ready: false,
-    chapter: -1,
-    flightEndsAt: 0,
-    applied: null as MapCamera | null,
-  })
-
-  const overlays = useMemo(
-    () => [...globalMapOverlays, ...(storyChapters[chapterIndex].overlays ?? [])],
-    [chapterIndex],
-  )
+  const shownCameraRef = useRef<MapCamera | null>(null)
+  const [authoring, setAuthoring] = useState(Boolean(authoredCamera))
+  const [overlays, setOverlays] = useState<MapOverlay[]>(() => overlaysFor(storyChapters[0].id))
 
   useEffect(() => {
     let frame = 0
-    let flightTimer = 0
+    let transition: { from: MapCamera; startedAt: number; durationMs: number } | null = null
+
+    const paintReadout = (camera: MapCamera) => {
+      if (readoutRef.current) {
+        readoutRef.current.textContent = formatCameraSnippet(camera)
+      }
+    }
+
+    const applyFrame = (now: number) => {
+      frame = 0
+      const scrollY = window.scrollY
+      let located: { id: string; localPx: number; height: number } | null = null
+
+      for (let index = 0; index < storyChapters.length; index += 1) {
+        const chapter = storyChapters[index]
+        const section = sectionRefs.current[chapter.id]
+
+        if (!section) {
+          continue
+        }
+
+        const start = section.offsetTop
+        const height = section.offsetHeight
+
+        if (scrollY < start) {
+          if (index === 0) {
+            located = { id: chapter.id, localPx: 0, height }
+          }
+          break
+        }
+
+        if (scrollY < start + height || index === storyChapters.length - 1) {
+          located = {
+            id: chapter.id,
+            localPx: Math.min(Math.max(scrollY - start, 0), height),
+            height,
+          }
+          break
+        }
+      }
+
+      if (!located) {
+        return
+      }
+
+      const chapter = storyChapters.find((item) => item.id === located.id) ?? storyChapters[0]
+      const totalVh = chapterHeightVh(chapter.boxes)
+      const progress = located.height === 0 ? 0 : located.localPx / located.height
+      const active = activeTextBox(
+        chapter.boxes,
+        progress * totalVh,
+        totalVh === 0 ? 0 : located.height / totalVh,
+      )
+
+      for (const box of storyChapters.flatMap((item) => item.boxes)) {
+        const node = boxRefs.current[box.id]
+
+        if (!node) {
+          continue
+        }
+
+        const isActive = active?.id === box.id && active.opacity > 0
+        node.style.opacity = isActive ? String(active.opacity) : '0'
+        node.style.visibility = isActive ? 'visible' : 'hidden'
+        node.setAttribute('aria-hidden', isActive ? 'false' : 'true')
+        node.style.transform = `translateX(-50%) translateY(${isActive ? -active.risePx : 0}px)`
+      }
+
+      if (chapter.id !== chapterIdRef.current) {
+        const previousIndex = storyChapters.findIndex((item) => item.id === chapterIdRef.current)
+        const nextIndex = storyChapters.findIndex((item) => item.id === chapter.id)
+        const durationMs =
+          nextIndex > previousIndex
+            ? (chapter.transitionMs ?? 0)
+            : (storyChapters[previousIndex]?.transitionMs ?? 0)
+
+        chapterIdRef.current = chapter.id
+        setOverlays(overlaysFor(chapter.id))
+
+        const shown = shownCameraRef.current
+        transition =
+          shown && durationMs > 0 && mapRef.current?.isReady()
+            ? { from: shown, startedAt: now, durationMs }
+            : null
+      }
+
+      const scrollCamera = lerpCamera(chapter.start, chapter.end, progress)
+      let camera = scrollCamera
+
+      if (transition) {
+        const t = (now - transition.startedAt) / transition.durationMs
+
+        if (t >= 1) {
+          transition = null
+        } else {
+          const viewportPx = Math.max(window.innerWidth, window.innerHeight)
+          camera = flightCamera(transition.from, scrollCamera, t, viewportPx)
+        }
+      }
+
+      const shown = shownCameraRef.current
+
+      if (!shown || !camerasNearlyEqual(shown, camera)) {
+        shownCameraRef.current = camera
+        mapRef.current?.jumpTo(camera)
+      }
+
+      if (!authoringRef.current) {
+        paintReadout(camera)
+      }
+
+      if (transition) {
+        requestFrame()
+      }
+    }
 
     const requestFrame = () => {
-      if (!frame) {
-        frame = window.requestAnimationFrame(render)
-      }
-    }
-
-    const moveCamera = (position: StoryPosition) => {
-      const state = cameraState.current
-
-      if (!state.ready || authoringRef.current) {
+      if (frame) {
         return
       }
 
-      const now = performance.now()
-      const previous = state.chapter
-      state.chapter = position.index
-
-      if (previous !== position.index && previous !== -1) {
-        const duration = transitionMs(previous, position.index)
-
-        if (duration > 0) {
-          mapRef.current?.flyTo(position.camera, duration)
-          state.applied = position.camera
-          state.flightEndsAt = now + duration
-          window.clearTimeout(flightTimer)
-          flightTimer = window.setTimeout(requestFrame, duration + 16)
-          return
-        }
-      }
-
-      if (previous === position.index && now < state.flightEndsAt) {
-        return
-      }
-
-      state.flightEndsAt = 0
-
-      if (state.applied && camerasNearlyEqual(state.applied, position.camera)) {
-        return
-      }
-
-      state.applied = position.camera
-      mapRef.current?.jumpTo(position.camera)
+      frame = window.requestAnimationFrame(applyFrame)
     }
 
-    const render = () => {
-      frame = 0
-      const position = locateStory(sectionRefs.current, window.scrollY)
-      const chapter = storyChapters[position.index]
-      const section = sectionRefs.current[position.index]
-      const totalVh = chapterHeightVh(chapter.boxes)
-      const pxPerVh = section && totalVh > 0 ? section.offsetHeight / totalVh : 0
-      const active = activeTextBox(chapter.boxes, position.progress * totalVh, pxPerVh)
-
-      for (const item of storyChapters) {
-        for (const box of item.boxes) {
-          const node = boxRefs.current[box.id]
-
-          if (!node) {
-            continue
-          }
-
-          const visible = active?.id === box.id && active.opacity > 0
-          node.style.opacity = visible ? String(active.opacity) : '0'
-          node.style.visibility = visible ? 'visible' : 'hidden'
-          node.style.transform = `translateX(-50%) translateY(${visible ? -active.risePx : 0}px)`
-          node.setAttribute('aria-hidden', visible ? 'false' : 'true')
-        }
-      }
-
-      setChapterIndex(position.index)
-      moveCamera(position)
-
-      if (readoutRef.current && !authoringRef.current) {
-        readoutRef.current.textContent = formatCameraSnippet(position.camera)
-      }
-    }
-
-    renderRef.current = render
     requestFrame()
     window.addEventListener('scroll', requestFrame, { passive: true })
     window.addEventListener('resize', requestFrame)
@@ -166,8 +169,10 @@ function App() {
     return () => {
       window.removeEventListener('scroll', requestFrame)
       window.removeEventListener('resize', requestFrame)
-      window.cancelAnimationFrame(frame)
-      window.clearTimeout(flightTimer)
+
+      if (frame) {
+        window.cancelAnimationFrame(frame)
+      }
     }
   }, [])
 
@@ -175,14 +180,10 @@ function App() {
     <main className="app-shell">
       <TerrainMap
         ref={mapRef}
-        getCamera={() => authoredCamera ?? locateStory(sectionRefs.current, window.scrollY).camera}
+        camera={initialCamera}
         overlays={overlays}
         interactive={devMode}
         initialAuthoring={Boolean(authoredCamera)}
-        onReady={() => {
-          cameraState.current = { ready: true, chapter: -1, flightEndsAt: 0, applied: null }
-          renderRef.current()
-        }}
         onUserControl={() => {
           authoringRef.current = true
           setAuthoring(true)
@@ -196,14 +197,14 @@ function App() {
       />
 
       <div className="story-track">
-        {storyChapters.map((chapter, index) => (
+        {storyChapters.map((chapter) => (
           <section
             key={chapter.id}
             className="story-chapter"
             style={{ height: `${chapterHeightVh(chapter.boxes)}vh` }}
             aria-label={chapter.title}
             ref={(node) => {
-              sectionRefs.current[index] = node
+              sectionRefs.current[chapter.id] = node
             }}
           />
         ))}
@@ -230,7 +231,7 @@ function App() {
       {devMode ? (
         <aside className="camera-readout">
           <p className="eyebrow">Camera</p>
-          <pre ref={readoutRef}>{formatCameraSnippet(authoredCamera ?? storyChapters[0].start)}</pre>
+          <pre ref={readoutRef}>{formatCameraSnippet(initialCamera)}</pre>
           {authoring ? (
             <p className="camera-readout-note">
               Scroll camera is paused. Remove the hash from the address bar and reload to follow the

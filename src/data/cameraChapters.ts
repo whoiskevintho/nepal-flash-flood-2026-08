@@ -71,17 +71,17 @@ export const storyChapters = [
     transitionMs: 2000,
     start: {
       center: [85.3688, 28.26166],
-      zoom: 16.68,
+      zoom: 16,
       pitch: 38.6,
       bearing: 23.3,
-      elevationMeters: 1000,
+      elevationMeters: 4800,
     },
     end: {
       center: [85.3688, 28.26166],
       zoom: 16.68,
       pitch: 38.6,
       bearing: 23.3,
-      elevationMeters: 1000,
+      elevationMeters: 4800,
     },
     overlays: [
       {
@@ -123,14 +123,14 @@ export const storyChapters = [
       zoom: 18,
       pitch: 35,
       bearing: 22.6,
-      elevationMeters: 1400,
+      elevationMeters: 4800,
     },
     end: {
       center: [85.197469, 28.05221],
       zoom: 18,
       pitch: 35,
       bearing: 22.6,
-      elevationMeters: 1400,
+      elevationMeters: 4800,
     },
     overlays: [
       {
@@ -173,18 +173,18 @@ export const storyChapters = [
     title: 'The town of Betrawati',
     transitionMs: 2000,
     start: {
-      center: [85.170015, 27.948871],
-      zoom: 18,
-      pitch: 35,
-      bearing: 22.6,
-      elevationMeters: 1400,
+      center: [85.17563, 27.96345],
+      zoom: 15,
+      pitch: 30,
+      bearing: 40,
+      elevationMeters: 3000,
     },
     end: {
-      center: [85.170015, 27.948871],
-      zoom: 18,
-      pitch: 35,
-      bearing: 22.6,
-      elevationMeters: 1400,
+      center: [85.17563, 27.96345],
+      zoom: 15,
+      pitch: 30,
+      bearing: 40,
+      elevationMeters: 3000,
     },
     overlays: [
       {
@@ -222,18 +222,18 @@ export const storyChapters = [
     title: 'The town of Trishuli',
     transitionMs: 2000,
     start: {
-      center: [85.132904, 27.900052],
+      center: [85.14231, 27.9079],
       zoom: 18,
       pitch: 35,
       bearing: 22.6,
-      elevationMeters: 1400,
+      elevationMeters: 3000,
     },
     end: {
-      center: [85.132904, 27.900052],
+      center: [85.14231, 27.9079],
       zoom: 18,
       pitch: 35,
       bearing: 22.6,
-      elevationMeters: 1400,
+      elevationMeters: 3000,
     },
     overlays: [
       {

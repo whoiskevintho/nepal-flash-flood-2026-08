@@ -9,7 +9,6 @@ import type {
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { flightCamera } from '../lib/storyScroll'
 import type { MapCamera, MapOverlay } from '../types/mapCamera'
 
 import { Protocol } from 'pmtiles'
@@ -163,24 +162,27 @@ const terrainStyle: StyleSpecification = {
   layers: [satelliteLayer],
 }
 
-function removeRenderedOverlays(map: maplibregl.Map) {
-  const overlayLayers = map
-    .getStyle()
-    .layers?.filter((layer) => layer.id.startsWith(`${OVERLAY_ID_PREFIX}-`))
-    .reverse()
+function removeStaleOverlays(map: maplibregl.Map, keepSourceIds: Set<string>) {
+  const style = map.getStyle()
 
-  overlayLayers?.forEach((layer) => {
-    if (map.getLayer(layer.id)) {
+  style.layers
+    ?.filter(
+      (layer) =>
+        layer.id.startsWith(`${OVERLAY_ID_PREFIX}-`) &&
+        'source' in layer &&
+        !keepSourceIds.has(layer.source),
+    )
+    .forEach((layer) => {
       map.removeLayer(layer.id)
-    }
-  })
+    })
 
-  Object.keys(map.getStyle().sources)
-    .filter((sourceId) => sourceId.startsWith(`${OVERLAY_ID_PREFIX}-source-`))
+  Object.keys(style.sources)
+    .filter(
+      (sourceId) =>
+        sourceId.startsWith(`${OVERLAY_ID_PREFIX}-source-`) && !keepSourceIds.has(sourceId),
+    )
     .forEach((sourceId) => {
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId)
-      }
+      map.removeSource(sourceId)
     })
 }
 
@@ -234,11 +236,13 @@ function bringLabelsToFront(map: maplibregl.Map) {
 }
 
 function setActiveOverlays(map: maplibregl.Map, overlays: MapOverlay[]) {
-  removeRenderedOverlays(map)
+  removeStaleOverlays(map, new Set(overlays.map(getOverlaySourceId)))
 
-  overlays.forEach((overlay) => {
-    addOverlay(map, overlay)
-  })
+  overlays
+    .filter((overlay) => !map.getSource(getOverlaySourceId(overlay)))
+    .forEach((overlay) => {
+      addOverlay(map, overlay)
+    })
 
   bringLabelsToFront(map)
 }
@@ -284,18 +288,15 @@ function readMapCamera(map: maplibregl.Map): MapCamera {
 
 export type TerrainMapHandle = {
   jumpTo: (camera: MapCamera) => void
-  flyTo: (camera: MapCamera, durationMs: number) => void
+  /** True once terrain is loaded and cameras land at their authored elevation. */
+  isReady: () => boolean
 }
 
 type TerrainMapProps = {
-  /** Read once, when the map is created and again when terrain is ready. */
-  getCamera: () => MapCamera
+  camera: MapCamera
   overlays?: MapOverlay[]
   interactive?: boolean
-  /** Ignore story camera moves from the start, for a camera restored from the URL hash. */
   initialAuthoring?: boolean
-  /** Called once terrain is loaded and the map accepts camera moves. */
-  onReady?: () => void
   onUserControl?: () => void
   onCameraLive?: (camera: MapCamera) => void
   onCameraCommit?: (camera: MapCamera) => void
@@ -303,11 +304,10 @@ type TerrainMapProps = {
 
 export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function TerrainMap(
   {
-    getCamera,
+    camera,
     overlays = [],
     interactive = false,
     initialAuthoring = false,
-    onReady,
     onUserControl,
     onCameraLive,
     onCameraCommit,
@@ -316,83 +316,60 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const cameraRef = useRef(camera)
   const overlaysRef = useRef(overlays)
-  const readyRef = useRef(false)
+  const terrainReadyRef = useRef(false)
   const authoringRef = useRef(initialAuthoring)
-  const callbacksRef = useRef({ getCamera, onReady, onUserControl, onCameraLive, onCameraCommit })
-  const flightFrameRef = useRef(0)
+  const onUserControlRef = useRef(onUserControl)
+  const onCameraLiveRef = useRef(onCameraLive)
+  const onCameraCommitRef = useRef(onCameraCommit)
 
   useEffect(() => {
     overlaysRef.current = overlays
   }, [overlays])
 
   useEffect(() => {
-    callbacksRef.current = { getCamera, onReady, onUserControl, onCameraLive, onCameraCommit }
-  })
+    onUserControlRef.current = onUserControl
+    onCameraLiveRef.current = onCameraLive
+    onCameraCommitRef.current = onCameraCommit
+  }, [onCameraCommit, onCameraLive, onUserControl])
 
-  useImperativeHandle(ref, () => {
-    const cancelFlight = () => {
-      window.cancelAnimationFrame(flightFrameRef.current)
-      flightFrameRef.current = 0
-    }
+  useImperativeHandle(ref, () => ({
+    jumpTo(nextCamera: MapCamera) {
+      if (authoringRef.current) {
+        return
+      }
 
-    const usableMap = () => {
       const map = mapRef.current
-      return map && readyRef.current && !authoringRef.current ? map : null
-    }
+      cameraRef.current = nextCamera
 
-    return {
-      jumpTo(nextCamera: MapCamera) {
-        const map = usableMap()
+      if (!map) {
+        return
+      }
 
-        if (map) {
-          cancelFlight()
-          jumpToChapter(map, nextCamera)
-        }
-      },
-      flyTo(nextCamera: MapCamera, durationMs: number) {
-        const map = usableMap()
-
-        if (!map) {
-          return
-        }
-
-        cancelFlight()
-        const from = readMapCamera(map)
-        const viewportPx = Math.max(map.getContainer().clientWidth, map.getContainer().clientHeight)
-        const startedAt = performance.now()
-
-        const step = (now: number) => {
-          const t = Math.min((now - startedAt) / durationMs, 1)
-
-          if (!usableMap()) {
-            flightFrameRef.current = 0
-            return
-          }
-
-          jumpToChapter(map, flightCamera(from, nextCamera, t, viewportPx))
-          flightFrameRef.current = t < 1 ? window.requestAnimationFrame(step) : 0
-        }
-
-        flightFrameRef.current = window.requestAnimationFrame(step)
-      },
-    }
-  })
+      if (terrainReadyRef.current) {
+        jumpToChapter(map, nextCamera)
+      } else {
+        map.jumpTo(getChapterCamera(nextCamera))
+      }
+    },
+    isReady() {
+      return terrainReadyRef.current
+    },
+  }))
 
   useEffect(() => {
-    const container = containerRef.current
-
-    if (!container || mapRef.current) {
+    if (!containerRef.current || mapRef.current) {
       return
     }
 
-    const initialCamera = callbacksRef.current.getCamera()
+    const initialCamera = cameraRef.current
 
     const protocol = new Protocol()
     maplibregl.addProtocol('pmtiles', protocol.tile)
 
     const map = new maplibregl.Map({
-      container,
+      container: containerRef.current,
       style: terrainStyle,
       center: initialCamera.center,
       zoom: initialCamera.zoom,
@@ -424,7 +401,7 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       }
 
       authoringRef.current = true
-      callbacksRef.current.onUserControl?.()
+      onUserControlRef.current?.()
     })
 
     map.on('move', () => {
@@ -432,7 +409,7 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
         return
       }
 
-      callbacksRef.current.onCameraLive?.(readMapCamera(map))
+      onCameraLiveRef.current?.(readMapCamera(map))
     })
 
     map.on('moveend', () => {
@@ -441,11 +418,12 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       }
 
       const liveCamera = readMapCamera(map)
-      callbacksRef.current.onCameraLive?.(liveCamera)
-      callbacksRef.current.onCameraCommit?.(liveCamera)
+      onCameraLiveRef.current?.(liveCamera)
+      onCameraCommitRef.current?.(liveCamera)
     })
 
     map.once('load', () => {
+      setActiveOverlays(map, overlaysRef.current)
       addPlaceLabels(map)
       addVideoLabels(map)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
@@ -462,33 +440,25 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       }
 
       map.once('idle', () => {
-        readyRef.current = true
+        terrainReadyRef.current = true
         map.resize()
-        setActiveOverlays(map, overlaysRef.current)
-        jumpToChapter(map, callbacksRef.current.getCamera())
-        callbacksRef.current.onReady?.()
-
-        map.once('idle', () => {
-          container.classList.add('is-ready')
-        })
-        map.triggerRepaint()
+        jumpToChapter(map, cameraRef.current)
       })
     })
 
     mapRef.current = map
 
     return () => {
-      window.cancelAnimationFrame(flightFrameRef.current)
       map.remove()
       mapRef.current = null
-      readyRef.current = false
+      terrainReadyRef.current = false
     }
   }, [interactive])
 
   useEffect(() => {
     const map = mapRef.current
 
-    if (!map || !readyRef.current) {
+    if (!map || !terrainReadyRef.current) {
       return
     }
 

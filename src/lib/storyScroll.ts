@@ -135,15 +135,15 @@ function easeInOutCubic(t: number) {
 }
 
 /**
- * Camera at time `t` (0–1) of a flight between two chapters. Zooms out partway
- * when the two views are too far apart to see each other.
+ * Camera at time `t` (0–1) of a flight between chapters. Zooms out partway
+ * when the two views are too far apart to see each other. At `t = 1` it is exactly `to`.
  */
 export function flightCamera(from: MapCamera, to: MapCamera, t: number, viewportPx: number): MapCamera {
   const k = easeInOutCubic(clamp01(t))
   const a = toMercator(from.center)
   const b = toMercator(to.center)
   const distance = Math.hypot(b.x - a.x, b.y - a.y)
-  const fitZoom = distance > 0 ? Math.log2(viewportPx / (512 * distance * 1.5)) : Infinity
+  const fitZoom = distance > 0 ? Math.log2(viewportPx / (128 * distance * 1.5)) : Infinity
   const dip = Math.max(0, Math.min(from.zoom, to.zoom) - fitZoom)
 
   return {
