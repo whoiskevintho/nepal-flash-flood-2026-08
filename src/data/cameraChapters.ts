@@ -36,7 +36,7 @@ export const storyChapters = [
       elevationMeters: 4850,
     },
     boxes: [
-      {
+      { //Chapter 1
         id: 'himalaya-overview-intro',
         text: 'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, the glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
         holdVh: 40,
@@ -46,7 +46,7 @@ export const storyChapters = [
       },
       pinned(
         'himalaya-overview-detail',
-        'The [[yellow:yellow]] area was traced from satellite imagery and represents the approximate extent of the ice and bedrock that detached during the collapse.',
+        'This [[yellow:yellow]] area was traced from satellite imagery and covers the approximate extent of the ice and bedrock that detached during the collapse.',
         90,
         36,
       ),
@@ -58,11 +58,12 @@ export const storyChapters = [
       ),
       {
         id: 'himalaya-beforeafter',
-        text: 'You can view before and after photos of the glacier area here.',
-        holdVh: 40,
+        text: 'Satellite imagery shows the glacier before and after the collapse.',
+        holdVh: 90,
         fadeVh: 18,
-        gapVh: 20,
+        gapVh: 36,
         motion: 'rise',
+        showBeforeAfter: true,
       },
     ],
     detail: {
@@ -79,12 +80,46 @@ export const storyChapters = [
       videos: [],
     },
   },
-  {
+  { //Chapter 2
+    id: 'distance-glacier-rasu',
+    title: 'Distance to glacier',
+    transitionMs: 2000,
+    start: {
+      center: [85.39458, 28.31205],
+      zoom: 12.5,
+      pitch: 40.1,
+      bearing: 120,
+      elevationMeters: 8800,
+    },
+    end: {
+      center: [85.39458, 28.31205],
+      zoom: 12.75,
+      pitch: 40.1,
+      bearing: 120,
+      elevationMeters: 8800,
+    },
+    overlays: [
+      {
+        id: 'distance-glacier-to-rasu',
+        data: '/data/distance_glacier_to_rasu.geojson',
+        lineColor: '#d71920',
+      },
+    ],
+    boxes: [
+      pinned(
+        'distance-glacier-rasu-intro',
+        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling approximately [[red:13 miles]] downstream and descending [[red:10,900 feet]] from the glacier to an elevation of approximately [[red:5,980]] feet.',
+        96,
+        16,
+      ),
+    ],
+  },
+  { //Chapter 3
     id: 'border-crossing-rasu',
     title: 'Border crossing, CCTV',
     transitionMs: 2000,
     start: {
-      center: [85.3688, 28.26166],
+      center: [85.36884, 28.25924],
       zoom: 16,
       pitch: 38.6,
       bearing: 23.3,
@@ -98,25 +133,23 @@ export const storyChapters = [
       elevationMeters: 4800,
     },
     overlays: [
-      {
-        id: 'distance-glacier-to-rasu',
-        data: '/data/distance_glacier_to_rasu.geojson',
-        lineColor: '#d71920',
-      },
     ],
     boxes: [
       pinned(
         'border-crossing-rasu-intro',
-        'CCTV cameras capture debris flow destroy border crossing.',
-        48,
-        16,
-      ),
-      pinned(
-        'border-crossing-rasu-detail',
-        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling approximately [[red:13 miles]] downstream and descending [[red:10,900 feet]] from the glacier to an elevation of approximately [[red:5,980]] feet. The first half of [[yellow:Video 1 & 2]] was captured by a CCTV camera pointed south west, at the main border crossing building. The second half is filmed from the same location, by a second camera looking north west up the Trishuli River. The footage is time stamped in China Standard Time, two hours and 15 minutes ahead of local Nepal Time. ',
-        100,
+        'CCTV cameras captured the debris flow as it destroyed the border crossing. [[yellow:Camera 1]] was pointed south west, at the main border crossing building. [[yellow:Camera 2]] was looking north west up the Trishuli River.',
+        90,
         36,
       ),
+      {
+        id: 'border-crossing-cameras',
+        text: 'The first half of this video is footage captrued by [[yellow:Camera 1]]. The second half is footage from [[yellow:Camera 2]].',
+        holdVh: 90,
+        fadeVh: 18,
+        gapVh: 36,
+        motion: 'rise',
+        showBeforeAfter: true,
+      },
     ],
     detail: {
       videos: [
@@ -128,7 +161,7 @@ export const storyChapters = [
       ],
     },
   },
-  {
+  { //Chapter 4
     id: 'work-site',
     title: 'Hydropower site at Mailung',
     transitionMs: 3000,

@@ -42,15 +42,20 @@
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
-.story-card .eyebrow {
-  margin-bottom: 8px;
-}
-
 .story-card p:not(.eyebrow) {
   margin: 0;
   color: #222;
   font-size: 1.25rem;
   line-height: 1.45;
+}
+
+.story-card-media {
+  margin-top: 12px;
+  pointer-events: auto;
+}
+
+.story-card-media .before-after-slider {
+  margin-bottom: 0;
 }
 
 .camera-readout {
@@ -313,12 +318,12 @@
 }
 
 .before-after-slider {
+  --before-after-max-height: 60svh;
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  max-height: min(28svh, 280px);
   aspect-ratio: 16 / 9;
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
   overflow: hidden;
   color: #fff;
   background: #111;
@@ -594,6 +599,6 @@
   }
 
   .before-after-slider {
-    max-height: 22svh;
+    --before-after-max-height: 40svh;
   }
 }

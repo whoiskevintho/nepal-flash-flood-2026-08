@@ -18,6 +18,7 @@ type LoadedImages = {
   beforeSrc: string
   afterSrc: string
   status: ImageLoadStatus
+  aspectRatio?: number
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -25,11 +26,11 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function loadImage(src: string) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image()
 
     image.onload = () => {
-      resolve()
+      resolve(image)
     }
     image.onerror = () => {
       reject(new Error(`Failed to load image: ${src}`))
@@ -60,12 +61,13 @@ export function BeforeAfterSlider({
     let isCancelled = false
 
     Promise.all([loadImage(before.src), loadImage(after.src)])
-      .then(() => {
+      .then(([beforeImage]) => {
         if (!isCancelled) {
           setLoadedImages({
             beforeSrc: before.src,
             afterSrc: after.src,
             status: 'ready',
+            aspectRatio: beforeImage.naturalWidth / beforeImage.naturalHeight,
           })
         }
       })
@@ -156,9 +158,15 @@ export function BeforeAfterSlider({
     )
   }
 
+  const aspectRatio = loadedImages.aspectRatio ?? 16 / 9
+
   return (
     <div
       className="before-after-slider"
+      style={{
+        aspectRatio,
+        width: `min(100%, calc(var(--before-after-max-height) * ${aspectRatio}))`,
+      }}
       ref={sliderRef}
       role="slider"
       tabIndex={0}

@@ -29,6 +29,8 @@ export type TextBox = {
   gapVh: number
   /** `pin` stays at the bottom. `rise` moves up with the scroll. */
   motion: TextBoxMotion
+  /** Shows the chapter's before/after slider inside the box. */
+  showBeforeAfter?: boolean
 }
 
 export type ChapterVideo = {

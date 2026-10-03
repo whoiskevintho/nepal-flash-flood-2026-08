@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
 import { globalMapOverlays, storyChapters } from './data/cameraChapters'
@@ -220,10 +221,17 @@ function App() {
               boxRefs.current[box.id] = node
             }}
           >
-            <p className="eyebrow">{chapter.title}</p>
             <p>
               <HighlightedText text={box.text} />
             </p>
+            {box.showBeforeAfter && chapter.detail?.beforeAfter ? (
+              <div className="story-card-media">
+                <BeforeAfterSlider
+                  before={chapter.detail.beforeAfter.before}
+                  after={chapter.detail.beforeAfter.after}
+                />
+              </div>
+            ) : null}
           </article>
         )),
       )}
