@@ -120,6 +120,13 @@ function getOverlayFillLayer(overlay: MapShapeOverlay): LayerSpecification {
   }
 }
 
+/** Distance paths have no fill. Shapes, like the glacier outline, keep the thinner stroke. */
+function overlayLineWidth(overlay: MapShapeOverlay): ExpressionSpecification {
+  const [near, mid, far] = overlay.fillColor ? [2, 5, 8] : [4, 8, 12]
+
+  return ['interpolate', ['linear'], ['zoom'], 10, near, 15, mid, 18, far]
+}
+
 function getOverlayOutlineLayer(overlay: MapShapeOverlay): LayerSpecification {
   return {
     id: getOverlayOutlineLayerId(overlay),
@@ -129,7 +136,7 @@ function getOverlayOutlineLayer(overlay: MapShapeOverlay): LayerSpecification {
       'line-color': overlay.lineColor ?? overlay.fillColor ?? '#d71920',
       'line-opacity': 0,
       'line-opacity-transition': OVERLAY_FADE,
-      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5, 18, 8],
+      'line-width': overlayLineWidth(overlay),
     },
   }
 }
