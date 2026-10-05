@@ -20,6 +20,50 @@ function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
   }
 }
 
+export const storyIntro = {
+  kicker: 'Visual story',
+  title: 'Understanding the scale of the floods in Nepal',
+  deck: 'An interactive story following the path of the torrential August flash flood in Nepal. Features eyewitness video and satellite imagery.',
+  author: 'Kevin Young',
+  authorHref: 'https://whoiskevintho.com/',
+  date: 'October 5, 2026',
+}
+
+type StorySource = {
+  name: string
+  detail: string
+  href?: string
+}
+
+export const storyEnd: {
+  kicker: string
+  title: string
+  methodology: string
+  sources: StorySource[]
+} = {
+  kicker: 'Sources',
+  title: '',
+  methodology:
+    'Distances, elevations, and the outline of the glacierthat detached were measured from satellite imagery in QGIS. Eyewitness footage is sourced from facebook and the 2026 Himalayan Tragedy Archive Youtube page. Individual video sources are linked above each video throughout the story. ',
+  sources: [
+    {
+      name: 'Copernicus Browser',
+      detail: 'Used to source DEMs and elevation data.',
+      href: 'https://browser.dataspace.copernicus.eu/',
+    },
+    {
+      name: 'Sentinel-2 cloudless, EOX',
+      detail: 'Satellite imagery in the map, modified Copernicus Sentinel data 2024.',
+      href: 'https://s2maps.eu/',
+    },
+    {
+      name: 'AWS Terrain Tiles',
+      detail: 'Elevation tiles for the 3D terrain.',
+      href: 'https://registry.opendata.aws/terrain-tiles/',
+    },
+  ],
+}
+
 export const storyChapters = [
   {
     id: 'himalaya-overview',

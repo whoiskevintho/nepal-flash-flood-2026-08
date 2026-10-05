@@ -44,26 +44,26 @@ const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
 const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
-const satelliteSource: RasterSourceSpecification = {
-  type: 'raster',
-  tiles: [
-    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
-  ],
-  tileSize: 256,
-  attribution: 'Satellite imagery © MapTiler',
-  maxzoom: 22,
-}
-
 // const satelliteSource: RasterSourceSpecification = {
 //   type: 'raster',
 //   tiles: [
-//     'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+//     `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
 //   ],
 //   tileSize: 256,
-//   attribution:
-//     'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
-//   maxzoom: 14,
+//   attribution: 'Satellite imagery © MapTiler',
+//   maxzoom: 22,
 // }
+
+const satelliteSource: RasterSourceSpecification = {
+  type: 'raster',
+  tiles: [
+    'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+  ],
+  tileSize: 256,
+  attribution:
+    'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
+  maxzoom: 14,
+}
 
 // const demSource: RasterDEMSourceSpecification = {
 //   type: 'raster-dem',
@@ -597,16 +597,6 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       attributionControl: false,
     })
 
-    if (interactive) {
-      map.addControl(
-        new maplibregl.NavigationControl({
-          visualizePitch: true,
-          showCompass: true,
-          showZoom: true,
-        }),
-        'top-right',
-      )
-    }
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
     map.on('movestart', (event) => {
@@ -640,16 +630,6 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       setActiveOverlays(map, overlaysRef.current)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
       map.setSky({})
-
-      if (interactive) {
-        map.addControl(
-          new maplibregl.TerrainControl({
-            source: TERRAIN_SOURCE_ID,
-            exaggeration: TERRAIN_EXAGGERATION,
-          }),
-          'top-right',
-        )
-      }
 
       map.once('idle', () => {
         terrainReadyRef.current = true

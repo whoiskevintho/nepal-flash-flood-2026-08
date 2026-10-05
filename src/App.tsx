@@ -4,7 +4,7 @@ import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { ChapterVideoPlayer } from './components/ChapterVideoPlayer'
 import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
-import { mapOverlays, storyChapters } from './data/cameraChapters'
+import { mapOverlays, storyChapters, storyEnd, storyIntro } from './data/cameraChapters'
 import {
   activeTextBox,
   camerasNearlyEqual,
@@ -31,6 +31,7 @@ function App() {
   const initialCamera = authoredCamera ?? storyChapters[0].start
   const mapRef = useRef<TerrainMapHandle>(null)
   const readoutRef = useRef<HTMLPreElement>(null)
+  const introRef = useRef<HTMLElement | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const boxRefs = useRef<Record<string, HTMLElement | null>>({})
   const chapterIdRef = useRef(storyChapters[0].id)
@@ -53,6 +54,13 @@ function App() {
     const applyFrame = (now: number) => {
       frame = 0
       const scrollY = window.scrollY
+      const intro = introRef.current
+
+      if (intro) {
+        const height = intro.offsetHeight || 1
+        intro.style.opacity = String(1 - clamp01(scrollY / height))
+      }
+
       let located: { id: string; localPx: number; height: number } | null = null
 
       for (let index = 0; index < storyChapters.length; index += 1) {
@@ -215,6 +223,27 @@ function App() {
       />
 
       <div className="story-track">
+        <section
+          className="scroll-screen scroll-screen-intro"
+          aria-label="Introduction"
+          ref={introRef}
+        >
+          <div className="story-masthead">
+            <p className="story-kicker">{storyIntro.kicker}</p>
+            <h1>{storyIntro.title}</h1>
+            <p className="story-deck">{storyIntro.deck}</p>
+            <p className="story-byline">
+              <span>
+                By{' '}
+                <a href={storyIntro.authorHref} target="_blank" rel="noreferrer">
+                  {storyIntro.author}
+                </a>
+              </span>
+              <span className="story-byline-date">{storyIntro.date}</span>
+            </p>
+          </div>
+        </section>
+
         {storyChapters.map((chapter) => (
           <section
             key={chapter.id}
@@ -226,6 +255,28 @@ function App() {
             }}
           />
         ))}
+
+        <section className="scroll-screen scroll-screen-sources" aria-label="Sources">
+          <div className="sources-page">
+            <p className="story-kicker">{storyEnd.kicker}</p>
+            {storyEnd.title ? <h1>{storyEnd.title}</h1> : null}
+            <p className="sources-methodology">{storyEnd.methodology}</p>
+            <ul className="sources-list">
+              {storyEnd.sources.map((source) => (
+                <li key={source.name}>
+                  {source.href ? (
+                    <a href={source.href} target="_blank" rel="noreferrer">
+                      {source.name}
+                    </a>
+                  ) : (
+                    <span className="sources-name">{source.name}</span>
+                  )}
+                  <p>{source.detail}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
       </div>
 
       {storyChapters.flatMap((chapter) =>
