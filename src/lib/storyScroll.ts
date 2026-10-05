@@ -7,7 +7,7 @@ function roundTo(value: number, digits: number) {
   return Math.round(value * scale) / scale
 }
 
-function clamp01(value: number) {
+export function clamp01(value: number) {
   return Math.min(1, Math.max(0, value))
 }
 
@@ -82,8 +82,12 @@ export function writeCameraHash(camera: MapCamera) {
   window.history.replaceState(null, '', next)
 }
 
+function fadeVhOf(box: TextBox) {
+  return box.motion === 'rise' ? 0 : (box.fadeVh ?? 0)
+}
+
 export function boxSlotVh(box: TextBox) {
-  return box.fadeVh * 2 + box.holdVh + box.gapVh
+  return fadeVhOf(box) * 2 + box.holdVh + box.gapVh
 }
 
 export function chapterHeightVh(boxes: TextBox[]) {
@@ -143,7 +147,7 @@ export function flightCamera(from: MapCamera, to: MapCamera, t: number, viewport
   const a = toMercator(from.center)
   const b = toMercator(to.center)
   const distance = Math.hypot(b.x - a.x, b.y - a.y)
-  const fitZoom = distance > 0 ? Math.log2(viewportPx / (128 * distance * 1.5)) : Infinity
+  const fitZoom = distance > 0 ? Math.log2(viewportPx / (64 * distance * 1.5)) : Infinity
   const dip = Math.max(0, Math.min(from.zoom, to.zoom) - fitZoom)
 
   return {
@@ -156,38 +160,32 @@ export function flightCamera(from: MapCamera, to: MapCamera, t: number, viewport
 }
 
 export function boxOpacity(box: TextBox, intoVh: number) {
-  const visibleVh = box.fadeVh * 2 + box.holdVh
+  const fadeVh = fadeVhOf(box)
+  const visibleVh = fadeVh * 2 + box.holdVh
 
   if (intoVh <= 0 || intoVh >= visibleVh) {
-    return intoVh <= 0 && box.fadeVh <= 0 && box.holdVh > 0 ? 1 : 0
+    return intoVh <= 0 && fadeVh <= 0 && box.holdVh > 0 && box.motion === 'pin' ? 1 : 0
   }
 
-  if (intoVh < box.fadeVh) {
-    return box.fadeVh === 0 ? 1 : intoVh / box.fadeVh
+  if (intoVh < fadeVh) {
+    return intoVh / fadeVh
   }
 
-  if (intoVh < box.fadeVh + box.holdVh) {
+  if (intoVh < fadeVh + box.holdVh) {
     return 1
   }
 
-  if (box.fadeVh === 0) {
-    return 0
-  }
-
-  return (visibleVh - intoVh) / box.fadeVh
+  return (visibleVh - intoVh) / fadeVh
 }
 
 export type ActiveTextBox = {
   id: string
   opacity: number
-  risePx: number
+  /** `rise` boxes only: 0 is just below the screen, 1 is just past the top. */
+  riseProgress: number
 }
 
-export function activeTextBox(
-  boxes: TextBox[],
-  localVh: number,
-  pxPerVh: number,
-): ActiveTextBox | null {
+export function activeTextBox(boxes: TextBox[], localVh: number): ActiveTextBox | null {
   let cursor = 0
 
   for (const box of boxes) {
@@ -195,15 +193,11 @@ export function activeTextBox(
 
     if (localVh < cursor + slot) {
       const intoVh = localVh - cursor
-      const opacity = boxOpacity(box, intoVh)
-      const visibleVh = box.fadeVh * 2 + box.holdVh
-      const risePx =
-        box.motion === 'rise' && intoVh > 0 && intoVh < visibleVh ? intoVh * pxPerVh : 0
 
       return {
         id: box.id,
-        opacity,
-        risePx,
+        opacity: boxOpacity(box, intoVh),
+        riseProgress: box.motion === 'rise' && box.holdVh > 0 ? clamp01(intoVh / box.holdVh) : 0,
       }
     }
 

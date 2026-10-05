@@ -21,16 +21,24 @@ export type TextBoxMotion = 'pin' | 'rise'
 export type TextBox = {
   id: string
   text: string
-  /** Viewport heights of scrolling while the box is fully visible. */
+  /**
+   * Viewport heights of scrolling while the box is fully visible. For `rise` boxes this is
+   * the scroll it takes to travel from below the screen to past the top.
+   */
   holdVh: number
-  /** Viewport heights used to fade in, and the same distance to fade out. */
-  fadeVh: number
+  /**
+   * `pin`: viewport heights of scrolling to fade in, and the same to fade out.
+   * `rise`: how close to the bottom and top of the screen, in vh, the box fades in and out.
+   */
+  fadeVh?: number
   /** Blank viewport heights after this box, before the next one. */
   gapVh: number
-  /** `pin` stays at the bottom. `rise` moves up with the scroll. */
+  /** `pin` fades in and out at the bottom. `rise` scrolls up from below the screen, no fade. */
   motion: TextBoxMotion
   /** Shows the chapter's before/after slider inside the box. */
   showBeforeAfter?: boolean
+  /** Shows the chapter's videos inside the box, with Prev/Next when there are several. */
+  showVideos?: boolean
 }
 
 export type ChapterVideo = {

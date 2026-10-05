@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { BeforeAfterSlider } from './components/BeforeAfterSlider'
+import { ChapterVideoPlayer } from './components/ChapterVideoPlayer'
 import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
 import { globalMapOverlays, storyChapters } from './data/cameraChapters'
@@ -8,6 +9,7 @@ import {
   activeTextBox,
   camerasNearlyEqual,
   chapterHeightVh,
+  clamp01,
   flightCamera,
   formatCameraSnippet,
   lerpCamera,
@@ -34,6 +36,7 @@ function App() {
   const chapterIdRef = useRef(storyChapters[0].id)
   const authoringRef = useRef(Boolean(authoredCamera))
   const shownCameraRef = useRef<MapCamera | null>(null)
+  const [visibleBoxId, setVisibleBoxId] = useState<string | null>(null)
   const [authoring, setAuthoring] = useState(Boolean(authoredCamera))
   const [overlays, setOverlays] = useState<MapOverlay[]>(() => overlaysFor(storyChapters[0].id))
 
@@ -87,11 +90,7 @@ function App() {
       const chapter = storyChapters.find((item) => item.id === located.id) ?? storyChapters[0]
       const totalVh = chapterHeightVh(chapter.boxes)
       const progress = located.height === 0 ? 0 : located.localPx / located.height
-      const active = activeTextBox(
-        chapter.boxes,
-        progress * totalVh,
-        totalVh === 0 ? 0 : located.height / totalVh,
-      )
+      const active = activeTextBox(chapter.boxes, progress * totalVh)
 
       for (const box of storyChapters.flatMap((item) => item.boxes)) {
         const node = boxRefs.current[box.id]
@@ -100,12 +99,30 @@ function App() {
           continue
         }
 
-        const isActive = active?.id === box.id && active.opacity > 0
-        node.style.opacity = isActive ? String(active.opacity) : '0'
+        let isActive = active?.id === box.id && active.opacity > 0
+        let opacity = isActive && active ? active.opacity : 0
+        let risePx = 0
+
+        if (isActive && active && box.motion === 'rise') {
+          const viewportPx = window.innerHeight
+          risePx = active.riseProgress * (viewportPx + node.offsetHeight)
+          const fadePx = ((box.fadeVh ?? 0) / 100) * viewportPx
+
+          if (fadePx > 0) {
+            const top = viewportPx - risePx
+            const bottom = top + node.offsetHeight
+            opacity *= clamp01((viewportPx - top) / fadePx) * clamp01(bottom / fadePx)
+            isActive = opacity > 0
+          }
+        }
+
+        node.style.opacity = String(opacity)
         node.style.visibility = isActive ? 'visible' : 'hidden'
         node.setAttribute('aria-hidden', isActive ? 'false' : 'true')
-        node.style.transform = `translateX(-50%) translateY(${isActive ? -active.risePx : 0}px)`
+        node.style.transform = `translateX(-50%) translateY(${-risePx}px)`
       }
+
+      setVisibleBoxId(active && active.opacity > 0 ? active.id : null)
 
       if (chapter.id !== chapterIdRef.current) {
         const previousIndex = storyChapters.findIndex((item) => item.id === chapterIdRef.current)
@@ -215,15 +232,12 @@ function App() {
         chapter.boxes.map((box) => (
           <article
             key={box.id}
-            className="story-card"
+            className={`story-card story-card-${box.motion}`}
             aria-hidden="true"
             ref={(node) => {
               boxRefs.current[box.id] = node
             }}
           >
-            <p>
-              <HighlightedText text={box.text} />
-            </p>
             {box.showBeforeAfter && chapter.detail?.beforeAfter ? (
               <div className="story-card-media">
                 <BeforeAfterSlider
@@ -232,6 +246,14 @@ function App() {
                 />
               </div>
             ) : null}
+            {box.showVideos && chapter.detail?.videos.length && visibleBoxId === box.id ? (
+              <div className="story-card-media">
+                <ChapterVideoPlayer videos={chapter.detail.videos} />
+              </div>
+            ) : null}
+            <p>
+              <HighlightedText text={box.text} />
+            </p>
           </article>
         )),
       )}

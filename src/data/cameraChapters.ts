@@ -3,7 +3,10 @@ import type { MapOverlay, StoryChapter, TextBox } from '../types/mapCamera'
 // Highlight phrases in box text with [[red:...]] or [[yellow:...]].
 // holdVh is how long a box stays fully visible, in viewport heights of scrolling.
 // fadeVh is the fade in and the fade out. gapVh is blank scroll after the box.
-// motion `pin` stays at the bottom. `rise` moves up at the scroll rate.
+// motion `pin` fades in and out at the bottom. `rise` scrolls up from below the screen, taking
+// holdVh to cross it. About 100 plus the box's height in vh matches the scroll rate.
+// On rise boxes, fadeVh is how close to the bottom and top edges the box fades in and out.
+// Rise box width is `.story-card-rise` in App.css.
 // transitionMs is how long the camera flies from the previous chapter's end to this chapter's start.
 
 function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
@@ -39,8 +42,8 @@ export const storyChapters = [
       { //Chapter 1
         id: 'himalaya-overview-intro',
         text: 'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, the glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
-        holdVh: 40,
-        fadeVh: 18,
+        holdVh: 120,
+        fadeVh: 15,
         gapVh: 20,
         motion: 'rise',
       },
@@ -52,15 +55,15 @@ export const storyChapters = [
       ),
       pinned(
         'himalaya-overview-detail-2',
-        'It measures approximately one mile across and half a mile wide and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet – meaning the debris fell [[red:4,730 feet]] at the start of the slide.',
+        'It measures approximately one mile across and half a mile tall and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet, meaning the debris fell nearly a mile at the start of this torrential collapse.',
         90,
         36,
       ),
       {
         id: 'himalaya-beforeafter',
         text: 'Satellite imagery shows the glacier before and after the collapse.',
-        holdVh: 90,
-        fadeVh: 18,
+        holdVh: 170,
+        fadeVh: 15,
         gapVh: 36,
         motion: 'rise',
         showBeforeAfter: true,
@@ -80,7 +83,7 @@ export const storyChapters = [
       videos: [],
     },
   },
-  { //Chapter 2
+  { //Chapter 2, zoom out before 3
     id: 'distance-glacier-rasu',
     title: 'Distance to glacier',
     transitionMs: 2000,
@@ -108,7 +111,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'distance-glacier-rasu-intro',
-        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling approximately [[red:13 miles]] downstream and descending [[red:10,900 feet]] from the glacier to an elevation of approximately [[red:5,980]] feet.',
+        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling approximately [[red:13 miles]] downstream and descending [[red:10,900 feet]].',
         96,
         16,
       ),
@@ -143,41 +146,41 @@ export const storyChapters = [
       ),
       {
         id: 'border-crossing-cameras',
-        text: 'The first half of this video is footage captrued by [[yellow:Camera 1]]. The second half is footage from [[yellow:Camera 2]].',
-        holdVh: 90,
-        fadeVh: 18,
+        text: 'The first half of this video is footage captured by [[yellow:Camera 1]]. The second half is footage from [[yellow:Camera 2]].',
+        holdVh: 170,
+        fadeVh: 15,
         gapVh: 36,
         motion: 'rise',
-        showBeforeAfter: true,
+        showVideos: true,
       },
     ],
     detail: {
       videos: [
         {
           youtubeUrl: 'https://youtu.be/oq7EXEEpQlg?si=R5TpYXDI3y3wR3l_',
-          title: 'Video 1 & 2',
+          title: 'Cameras 1 & 2',
           sourceHref: 'https://x.com/MrGafish/status/2092547312518348820?s=46',
         },
       ],
     },
   },
-  { //Chapter 4
-    id: 'work-site',
+  { //Chapter 4, zoom out before 5
+    id: 'distance-work-site',
     title: 'Hydropower site at Mailung',
     transitionMs: 3000,
     start: {
-      center: [85.197469, 28.05221],
-      zoom: 18,
-      pitch: 35,
-      bearing: 22.6,
-      elevationMeters: 4800,
+      center: [85.22524, 28.10903],
+      zoom: 11.5,
+      pitch: 48,
+      bearing: 60.2,
+      elevationMeters: 8800,
     },
     end: {
-      center: [85.197469, 28.05221],
-      zoom: 18,
-      pitch: 35,
-      bearing: 22.6,
-      elevationMeters: 4800,
+      center: [85.22524, 28.10903],
+      zoom: 11.55,
+      pitch: 48,
+      bearing: 60.2,
+      elevationMeters: 8800,
     },
     overlays: [
       {
@@ -188,50 +191,82 @@ export const storyChapters = [
     ],
     boxes: [
       pinned(
-        'work-site-intro',
-        'Videos capture hydropower site destroyed by debris flow.',
-        48,
-        16,
+        'distance-work-site-detail',
+        'By the time the flow reached a hydro facility in Mailung, it had descended [[red:13,880 feet]] and traveled [[red:32 miles]] downstream from the glacier.',
+        90,
+        36,
       ),
+    ],
+  },
+  { //Chapter 5
+    id: 'work-site',
+    title: 'Hydropower site at Mailung',
+    transitionMs: 3000,
+    start: {
+      center: [85.19557, 28.04744],
+      zoom: 17.5,
+      pitch: 35,
+      bearing: 22.6,
+      elevationMeters: 4800,
+    },
+    end: {
+      center: [85.19557, 28.04744],
+      zoom: 18,
+      pitch: 35,
+      bearing: 22.6,
+      elevationMeters: 4800,
+    },
+    overlays: [
+    ],
+    boxes: [
       pinned(
         'work-site-detail',
-        'Workers and onlookers captured the debris flow as it rapidly approached and ultimately destroyed a hydropower facility in Mailung, approximately [[red:32 miles]] downstream from the glacier. By this point, the flow had descended [[red:13,880 feet]] in elevation, reaching this site at an elevation of approximately [[red:3,000 feet]]. In [[yellow:Video 1]], a worker at the hydropower site films the appraoching flood from upstream. [[yellow:Video 2]] is captured by an onlooker from a higher elevation on the left side of the Tishuli river, looking north east and upstream.',
+        'Workers and onlookers captured the debris flow as it rapidly approached.[[yellow:Camera 1]] films the approaching flood from upstream. [[yellow:Camera 2]] was captured by an onlooker from a higher elevation.',
         100,
         36,
       ),
+      {
+        id: 'work-site-cameras',
+        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        holdVh: 170,
+        fadeVh: 15,
+        gapVh: 36,
+        motion: 'rise',
+        showVideos: true,
+      },
     ],
     detail: {
       videos: [
         {
           facebookUrl: 'https://www.facebook.com/reel/1928523987821099',
-          title: 'Video 1',
+          title: 'Camera 1',
           sourceHref: 'https://www.facebook.com/share/v/1CGYLJchVC/',
         },
         {
           facebookUrl: 'https://www.facebook.com/reel/1538884681259185',
-          title: 'Video 2',
+          title: 'Camera 2',
           sourceHref: 'https://www.facebook.com/share/v/1BoUyK4qLP/',
         },
       ],
     },
   },
-  {
-    id: 'betrawati-bazaar',
+  { //Chapter 6, zoom out before 7
+    id: 'distance-betrawati',
     title: 'The town of Betrawati',
-    transitionMs: 2000,
+    transitionMs: 3000,
     start: {
-      center: [85.17563, 27.96345],
-      zoom: 15,
-      pitch: 30,
-      bearing: 40,
-      elevationMeters: 3000,
+      center: [85.26057, 28.10998],
+      zoom: 10.6,
+      pitch: 39.3,
+      bearing: 62.7,
+      elevationMeters: 2000,
     },
     end: {
-      center: [85.17563, 27.96345],
-      zoom: 15,
-      pitch: 30,
-      bearing: 40,
-      elevationMeters: 3000,
+      center: [85.26057, 28.10998],
+      zoom: 10.75,
+      pitch: 39.3,
+      bearing: 62.7,
+      elevationMeters: 2000,
     },
     overlays: [
       {
@@ -241,30 +276,101 @@ export const storyChapters = [
       },
     ],
     boxes: [
-      pinned('betrawati-bazaar-intro', 'Videos taken of the town of Betrawati.', 48, 16),
       pinned(
-        'betrawati-bazaar-detail',
-        'The town of Betrawati is located approximately [[red:39 miles]] downstream from the glacier and sits at an elevation of approximately [[red:2,000 feet]]. At this point the debris flow had descended approximately [[red:14,880 feet]] in elevation. [[yellow:Video 1]] is filmed from a higher elevation north of town, looking south downstream, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Video 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently rushes past and climbs 440 feet above the previous riverbank.',
+        'distance-betrawati-detail',
+        'By the time the flow reached the town of Betrawati, it had descended [[red:14,880 feet]] and traveled [[red:39 miles]] downstream from the glacier.',
+        90,
+        36,
+      ),
+    ],
+  },
+  { //Chapter 7
+    id: 'betrawoti-bazaar',
+    title: 'The town of Betrawati',
+    transitionMs: 2000,
+    start: {
+      center: [85.17442, 27.96324],
+      zoom: 15,
+      pitch: 30,
+      bearing: 40,
+      elevationMeters: 3000,
+    },
+    end: {
+      center: [85.17442, 27.96324],
+      zoom: 15,
+      pitch: 30,
+      bearing: 40,
+      elevationMeters: 3000,
+    },
+    overlays: [
+    ],
+    boxes: [
+      pinned(
+        'betrawati-detail',
+        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 1]] filmed from a higher elevation north of town, looking south downstream, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Camera 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
         100,
         36,
       ),
+      {
+        id: 'betrawati-cameras',
+        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        holdVh: 170,
+        fadeVh: 15,
+        gapVh: 36,
+        motion: 'rise',
+        showVideos: true,
+      },
     ],
     detail: {
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
-          title: 'Video 1',
+          title: 'Camera 1',
           sourceHref: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
-          title: 'Video 2',
+          title: 'Camera 2',
           sourceHref: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
         },
       ],
     },
   },
-  {
+  { //Chapter 8, zoom out before 9
+    id: 'distance-trishuli',
+    title: 'The town of Trishuli',
+    transitionMs: 3000,
+    start: {
+      center: [85.23121, 28.07599],
+      zoom: 10.6,
+      pitch: 39.3,
+      bearing: 62.7,
+      elevationMeters: 2000,
+    },
+    end: {
+      center: [85.23121, 28.07599],
+      zoom: 10.75,
+      pitch: 39.3,
+      bearing: 62.7,
+      elevationMeters: 2000,
+    },
+    overlays: [
+      {
+        id: 'distance-glacier-to-trishuli',
+        data: '/data/distance_glacier_to_trishuli.geojson',
+        lineColor: '#d71920',
+      },
+    ],
+    boxes: [
+      pinned(
+        'distance-trishuli-detail',
+        'By the time the flow reached the town of Trishuli, it had descended [[red:15,060 feet]] and traveled [[red:44 miles]] downstream from the glacier.',
+        90,
+        36,
+      ),
+    ],
+  },
+  { //Chapter 9
     id: 'trishuli-bidur',
     title: 'The town of Trishuli',
     transitionMs: 2000,
@@ -283,20 +389,23 @@ export const storyChapters = [
       elevationMeters: 3000,
     },
     overlays: [
-      {
-        id: 'distance-glacier-to-trishuli',
-        data: '/data/distance_glacier_to_trishuli.geojson',
-        lineColor: '#d71920',
-      },
     ],
     boxes: [
-      pinned('trishuli-bidur-intro', 'Videos taken in the town of Trishuli.', 48, 16),
       pinned(
         'trishuli-bidur-detail',
-        'The town of Trishuli is located approximately [[red:44 miles]] downstream from the glacier and sits at an elevation of approximately [[red:1,790 feet]]. The debris flow has now descended approximately [[red:15,090 feet]] in elevation. [[yellow:Video 1]] was captured from the roof of a Buddhist temple, looking north upstream, and shows the debris flow as it enters the town. [[yellow:Video 2]] is captured just north of the town and looks north upstream as the debris flow approaches the center of Trishuli.',
-        100,
+        'Footage from [[yellow:Camera 1]] was captured by witnesses from the roof of a Buddhist temple, and shows the debris flow as it enters town. [[yellow:Camera 2]] was captured just north of the town and looks upstream as the debris flow approaches.',
+        90,
         36,
       ),
+      {
+        id: 'trishuli-cameras',
+        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        holdVh: 170,
+        fadeVh: 15,
+        gapVh: 36,
+        motion: 'rise',
+        showVideos: true,
+      },
     ],
     detail: {
       videos: [
