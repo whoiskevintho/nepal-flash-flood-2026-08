@@ -11,14 +11,9 @@ import {
   chapterHeightVh,
   clamp01,
   flightCamera,
-  formatCameraSnippet,
   lerpCamera,
-  parseCameraHash,
-  writeCameraHash,
 } from './lib/storyScroll'
 import type { MapCamera, MapOverlay } from './types/mapCamera'
-
-const devMode = import.meta.env.DEV
 
 function overlaysFor(chapterId: string): MapOverlay[] {
   return mapOverlays.filter(
@@ -27,29 +22,19 @@ function overlaysFor(chapterId: string): MapOverlay[] {
 }
 
 function App() {
-  const authoredCamera = devMode ? parseCameraHash(window.location.hash) : null
-  const initialCamera = authoredCamera ?? storyChapters[0].start
+  const initialCamera = storyChapters[0].start
   const mapRef = useRef<TerrainMapHandle>(null)
-  const readoutRef = useRef<HTMLPreElement>(null)
   const introRef = useRef<HTMLElement | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const boxRefs = useRef<Record<string, HTMLElement | null>>({})
   const chapterIdRef = useRef(storyChapters[0].id)
-  const authoringRef = useRef(Boolean(authoredCamera))
   const shownCameraRef = useRef<MapCamera | null>(null)
   const [visibleBoxId, setVisibleBoxId] = useState<string | null>(null)
-  const [authoring, setAuthoring] = useState(Boolean(authoredCamera))
   const [overlays, setOverlays] = useState<MapOverlay[]>(() => overlaysFor(storyChapters[0].id))
 
   useEffect(() => {
     let frame = 0
     let transition: { from: MapCamera; startedAt: number; durationMs: number } | null = null
-
-    const paintReadout = (camera: MapCamera) => {
-      if (readoutRef.current) {
-        readoutRef.current.textContent = formatCameraSnippet(camera)
-      }
-    }
 
     const applyFrame = (now: number) => {
       frame = 0
@@ -171,10 +156,6 @@ function App() {
         mapRef.current?.jumpTo(camera)
       }
 
-      if (!authoringRef.current) {
-        paintReadout(camera)
-      }
-
       if (transition) {
         requestFrame()
       }
@@ -208,18 +189,6 @@ function App() {
         ref={mapRef}
         camera={initialCamera}
         overlays={overlays}
-        interactive={devMode}
-        initialAuthoring={Boolean(authoredCamera)}
-        onUserControl={() => {
-          authoringRef.current = true
-          setAuthoring(true)
-        }}
-        onCameraLive={(camera) => {
-          if (readoutRef.current) {
-            readoutRef.current.textContent = formatCameraSnippet(camera)
-          }
-        }}
-        onCameraCommit={writeCameraHash}
       />
 
       <div className="story-track">
@@ -308,23 +277,6 @@ function App() {
           </article>
         )),
       )}
-
-      {devMode ? (
-        <aside className="camera-readout">
-          <p className="eyebrow">Camera</p>
-          <pre ref={readoutRef}>{formatCameraSnippet(initialCamera)}</pre>
-          {authoring ? (
-            <p className="camera-readout-note">
-              Scroll camera is paused. Remove the hash from the address bar and reload to follow the
-              story.
-            </p>
-          ) : (
-            <p className="camera-readout-note">
-              Drag the map to pause the story and copy this camera into a chapter.
-            </p>
-          )}
-        </aside>
-      ) : null}
     </main>
   )
 }

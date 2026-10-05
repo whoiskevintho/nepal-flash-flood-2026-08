@@ -488,18 +488,6 @@ function jumpToChapter(map: maplibregl.Map, chapter: MapCamera) {
   map.jumpTo(getElevatedChapterCamera(chapter))
 }
 
-function readMapCamera(map: maplibregl.Map): MapCamera {
-  const center = map.getCenter()
-
-  return {
-    center: [center.lng, center.lat],
-    zoom: map.getZoom(),
-    pitch: map.getPitch(),
-    bearing: map.getBearing(),
-    elevationMeters: map.getCenterElevation(),
-  }
-}
-
 export type TerrainMapHandle = {
   jumpTo: (camera: MapCamera) => void
   /** True once terrain is loaded and cameras land at their authored elevation. */
@@ -509,23 +497,10 @@ export type TerrainMapHandle = {
 type TerrainMapProps = {
   camera: MapCamera
   overlays?: MapOverlay[]
-  interactive?: boolean
-  initialAuthoring?: boolean
-  onUserControl?: () => void
-  onCameraLive?: (camera: MapCamera) => void
-  onCameraCommit?: (camera: MapCamera) => void
 }
 
 export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function TerrainMap(
-  {
-    camera,
-    overlays = [],
-    interactive = false,
-    initialAuthoring = false,
-    onUserControl,
-    onCameraLive,
-    onCameraCommit,
-  },
+  { camera, overlays = [] },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -533,27 +508,13 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
   const cameraRef = useRef(camera)
   const overlaysRef = useRef(overlays)
   const terrainReadyRef = useRef(false)
-  const authoringRef = useRef(initialAuthoring)
-  const onUserControlRef = useRef(onUserControl)
-  const onCameraLiveRef = useRef(onCameraLive)
-  const onCameraCommitRef = useRef(onCameraCommit)
 
   useEffect(() => {
     overlaysRef.current = overlays
   }, [overlays])
 
-  useEffect(() => {
-    onUserControlRef.current = onUserControl
-    onCameraLiveRef.current = onCameraLive
-    onCameraCommitRef.current = onCameraCommit
-  }, [onCameraCommit, onCameraLive, onUserControl])
-
   useImperativeHandle(ref, () => ({
     jumpTo(nextCamera: MapCamera) {
-      if (authoringRef.current) {
-        return
-      }
-
       const map = mapRef.current
       cameraRef.current = nextCamera
 
@@ -591,40 +552,12 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       bearing: initialCamera.bearing,
       maxPitch: 85,
       maxZoom: 18,
-      interactive,
-      scrollZoom: false,
+      interactive: false,
       renderWorldCopies: false,
       attributionControl: false,
     })
 
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
-
-    map.on('movestart', (event) => {
-      if (!event.originalEvent || authoringRef.current) {
-        return
-      }
-
-      authoringRef.current = true
-      onUserControlRef.current?.()
-    })
-
-    map.on('move', () => {
-      if (!authoringRef.current) {
-        return
-      }
-
-      onCameraLiveRef.current?.(readMapCamera(map))
-    })
-
-    map.on('moveend', () => {
-      if (!authoringRef.current) {
-        return
-      }
-
-      const liveCamera = readMapCamera(map)
-      onCameraLiveRef.current?.(liveCamera)
-      onCameraCommitRef.current?.(liveCamera)
-    })
 
     map.once('load', () => {
       setActiveOverlays(map, overlaysRef.current)
@@ -646,7 +579,7 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
       mapRef.current = null
       terrainReadyRef.current = false
     }
-  }, [interactive])
+  }, [])
 
   useEffect(() => {
     const map = mapRef.current
