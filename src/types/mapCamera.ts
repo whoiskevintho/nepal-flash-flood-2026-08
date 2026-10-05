@@ -8,13 +8,45 @@ export type MapCamera = {
   elevationMeters: number
 }
 
-export type MapOverlay = {
+type MapOverlayBase = {
   id: string
+  /** Chapter ids this overlay is shown in. Omit to show it in every chapter. */
+  chapterIds?: string[]
+}
+
+/** Lines and shapes loaded from a GeoJSON file. */
+export type MapShapeOverlay = MapOverlayBase & {
   data: string
   fillColor?: string
   fillOpacity?: number
   lineColor?: string
+  labels?: never
 }
+
+/** Which side of its point a label sits on. */
+export type MapLabelPlacement = 'above' | 'below' | 'left' | 'right'
+
+export type MapLabel = {
+  text: string
+  coordinates: CameraCenter
+  /** Defaults to white. Also colors the arrow. */
+  color?: string
+  italic?: boolean
+  /** Text size in pixels at zoom 10. It grows as the map zooms in. Defaults to 18. */
+  size?: number
+  /** Defaults to `above`. */
+  placement?: MapLabelPlacement
+  /** Draws an arrow between the text and the point, pointing at the point. */
+  arrow?: boolean
+}
+
+/** Text labels, and optional arrows, written directly in TypeScript. */
+export type MapLabelOverlay = MapOverlayBase & {
+  labels: MapLabel[]
+  data?: never
+}
+
+export type MapOverlay = MapShapeOverlay | MapLabelOverlay
 
 export type TextBoxMotion = 'pin' | 'rise'
 
@@ -73,7 +105,6 @@ export type StoryChapter = {
    */
   transitionMs?: number
   boxes: TextBox[]
-  overlays?: MapOverlay[]
   /** Kept for a later pass. The scroll story reads `boxes`. */
   detail?: {
     beforeAfter?: {

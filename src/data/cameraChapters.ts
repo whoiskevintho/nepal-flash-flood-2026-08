@@ -26,7 +26,7 @@ export const storyChapters = [
     title: 'Glacier Collapse',
     start: {
       center: [85.52396, 28.28729],
-      zoom: 13.68,
+      zoom: 14.25,
       pitch: 61,
       bearing: 126.5,
       elevationMeters: 4850,
@@ -49,7 +49,7 @@ export const storyChapters = [
       },
       pinned(
         'himalaya-overview-detail',
-        'This [[yellow:yellow]] area was traced from satellite imagery and covers the approximate extent of the ice and bedrock that detached during the collapse.',
+        'This [[yellow:yellow]] area was traced from satellite imagery and covers the extent of the ice and bedrock that detached during the collapse.',
         90,
         36,
       ),
@@ -101,17 +101,10 @@ export const storyChapters = [
       bearing: 120,
       elevationMeters: 8800,
     },
-    overlays: [
-      {
-        id: 'distance-glacier-to-rasu',
-        data: '/data/distance_glacier_to_rasu.geojson',
-        lineColor: '#d71920',
-      },
-    ],
     boxes: [
       pinned(
         'distance-glacier-rasu-intro',
-        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling approximately [[red:13 miles]] downstream and descending [[red:10,900 feet]].',
+        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling [[red:13 miles]] downstream and descending [[red:10,900 feet]].',
         96,
         16,
       ),
@@ -135,8 +128,6 @@ export const storyChapters = [
       bearing: 23.3,
       elevationMeters: 4800,
     },
-    overlays: [
-    ],
     boxes: [
       pinned(
         'border-crossing-rasu-intro',
@@ -182,13 +173,6 @@ export const storyChapters = [
       bearing: 60.2,
       elevationMeters: 8800,
     },
-    overlays: [
-      {
-        id: 'distance-glacier-to-work-site',
-        data: '/data/distance_glacier_to_worksite1.geojson',
-        lineColor: '#d71920',
-      },
-    ],
     boxes: [
       pinned(
         'distance-work-site-detail',
@@ -216,12 +200,10 @@ export const storyChapters = [
       bearing: 22.6,
       elevationMeters: 4800,
     },
-    overlays: [
-    ],
     boxes: [
       pinned(
         'work-site-detail',
-        'Workers and onlookers captured the debris flow as it rapidly approached.[[yellow:Camera 1]] films the approaching flood from upstream. [[yellow:Camera 2]] was captured by an onlooker from a higher elevation.',
+        'Workers and witnesses captured the debris flow as it rapidly approached.[[yellow:Camera 1]] was filmed from the bank of the Trishuli river and captures the approaching flood. [[yellow:Camera 2]] was filmed from a higher elevation.',
         100,
         36,
       ),
@@ -268,13 +250,6 @@ export const storyChapters = [
       bearing: 62.7,
       elevationMeters: 2000,
     },
-    overlays: [
-      {
-        id: 'distance-glacier-to-betrawati',
-        data: '/data/distance_glacier_to_betrawati.geojson',
-        lineColor: '#d71920',
-      },
-    ],
     boxes: [
       pinned(
         'distance-betrawati-detail',
@@ -285,7 +260,7 @@ export const storyChapters = [
     ],
   },
   { //Chapter 7
-    id: 'betrawoti-bazaar',
+    id: 'betrawati-bazaar',
     title: 'The town of Betrawati',
     transitionMs: 2000,
     start: {
@@ -302,12 +277,10 @@ export const storyChapters = [
       bearing: 40,
       elevationMeters: 3000,
     },
-    overlays: [
-    ],
     boxes: [
       pinned(
         'betrawati-detail',
-        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 1]] filmed from a higher elevation north of town, looking south downstream, and captures the main flow as it enters town and pushes up a tributary river. [[yellow:Camera 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
+        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 1]] filmed from a higher elevation looking downstream, and captures the debris flow as it enters town and pushes up a tributary river. [[yellow:Camera 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
         100,
         36,
       ),
@@ -354,17 +327,10 @@ export const storyChapters = [
       bearing: 62.7,
       elevationMeters: 2000,
     },
-    overlays: [
-      {
-        id: 'distance-glacier-to-trishuli',
-        data: '/data/distance_glacier_to_trishuli.geojson',
-        lineColor: '#d71920',
-      },
-    ],
     boxes: [
       pinned(
         'distance-trishuli-detail',
-        'By the time the flow reached the town of Trishuli, it had descended [[red:15,060 feet]] and traveled [[red:44 miles]] downstream from the glacier.',
+        'By the time the flow reached the town of Trishuli, it had descended [[red:15,060 feet]] and traveled [[red:44 miles]].',
         90,
         36,
       ),
@@ -373,7 +339,7 @@ export const storyChapters = [
   { //Chapter 9
     id: 'trishuli-bidur',
     title: 'The town of Trishuli',
-    transitionMs: 2000,
+    transitionMs: 3000,
     start: {
       center: [85.14231, 27.9079],
       zoom: 18,
@@ -388,8 +354,6 @@ export const storyChapters = [
       bearing: 22.6,
       elevationMeters: 3000,
     },
-    overlays: [
-    ],
     boxes: [
       pinned(
         'trishuli-bidur-detail',
@@ -411,12 +375,12 @@ export const storyChapters = [
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=P1AodkdPMck',
-          title: 'Video 1',
+          title: 'Camera 1',
           sourceHref: 'https://www.youtube.com/watch?v=P1AodkdPMck',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
-          title: 'Video 2',
+          title: 'Camera 2',
           sourceHref: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
         },
       ],
@@ -424,12 +388,119 @@ export const storyChapters = [
   },
 ] satisfies StoryChapter[]
 
-export const globalMapOverlays = [
+// Each overlay shows in the chapters listed in chapterIds, or in every chapter when omitted.
+// An overlay stays loaded while scrolling between its chapters and fades in and out at the edges.
+// Label overlays take `labels` instead of `data`. Coordinates are [longitude, latitude]:
+// {
+//   id: 'rasuwagadi-labels',
+//   chapterIds: ['distance-glacier-rasu', 'border-crossing-rasu'],
+//   labels: [
+//     { text: 'Rasuwagadi', coordinates: [85.37702, 28.27727], arrow: true },
+//     { text: 'Camera 1', coordinates: [85.37789, 28.28041], color: '#ffd400', italic: true, placement: 'below' },
+//   ],
+// },
+export const mapOverlays = [
   {
     id: 'glacier-burst-shape',
     data: '/data/glacier_burst_shape.geojson',
     fillColor: '#ffd400',
     fillOpacity: 0.22,
     lineColor: '#ffd400',
+  },
+  {
+    id: 'glacier-labels',
+    labels: [
+      { text: 'Glacier', coordinates: [85.53488, 28.28415] },
+    ],
+  },
+  {
+    id: 'valley-label',
+    chapterIds: ['himalaya-overview'],
+    labels: [
+      { text: 'Valley floor', coordinates: [85.5104, 28.29344] },
+    ],
+  },
+  {
+    id: 'rasuwagadi-labels',
+    chapterIds: ['distance-glacier-rasu', 'border-crossing-rasu'],
+    labels: [
+      { text: 'Rasuwagadi', coordinates: [85.37702, 28.27727], italic: true },
+    ],
+  },
+  {
+    id: 'border-crossing-labels',
+    chapterIds: ['border-crossing-rasu'],
+    labels: [
+      { text: 'Cameras 1 & 2', coordinates: [85.37789, 28.28041], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+    ],
+  },
+  {
+    id: 'mailung-labels',
+    chapterIds: ['distance-work-site', 'work-site'],
+    labels: [
+      { text: 'Mailung', coordinates: [85.20723, 28.07019], italic: true },
+    ],
+  },
+  {
+    id: 'mailung-cameras-labels',
+    chapterIds: ['work-site'],
+    labels: [
+      { text: 'Camera 1', coordinates: [85.20785, 28.07332], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 2', coordinates: [85.20367, 28.07256], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+    ],
+  },
+  {
+    id: 'betrawati-labels',
+    chapterIds: ['distance-betrawati','betrawati-bazaar'],
+    labels: [
+      { text: 'Betrawati', coordinates: [85.18391, 27.97082], italic: true },
+    ],
+  },
+  {
+    id: 'betrawati-cameras-labels',
+    chapterIds: ['betrawati-bazaar'],
+    labels: [
+      { text: 'Camera 1', coordinates: [85.18561, 27.97566], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 2', coordinates: [85.18366, 27.97585], color: '#ffd400', arrow: true, size: 20, placement: 'below' },
+    ],
+  },
+  {
+    id: 'trishuli-labels',
+    chapterIds: ['distance-trishuli', 'trishuli-bidur'],
+    labels: [
+      { text: 'Trishuli', coordinates: [85.14843, 27.92304], italic: true },
+    ],
+  },
+  {
+    id: 'trishuli-cameras-labels',
+    chapterIds: ['trishuli-bidur'],
+    labels: [
+      { text: 'Camera 1', coordinates: [85.1483, 27.92057], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 2', coordinates: [85.14828, 27.92814], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+    ],
+  },
+  {
+    id: 'distance-glacier-to-rasu',
+    data: '/data/distance_glacier_to_rasu.geojson',
+    lineColor: '#d71920',
+    chapterIds: ['distance-glacier-rasu'],
+  },
+  {
+    id: 'distance-glacier-to-work-site',
+    data: '/data/distance_glacier_to_worksite1.geojson',
+    lineColor: '#d71920',
+    chapterIds: ['distance-work-site'],
+  },
+  {
+    id: 'distance-glacier-to-betrawati',
+    data: '/data/distance_glacier_to_betrawati.geojson',
+    lineColor: '#d71920',
+    chapterIds: ['distance-betrawati'],
+  },
+  {
+    id: 'distance-glacier-to-trishuli',
+    data: '/data/distance_glacier_to_trishuli.geojson',
+    lineColor: '#d71920',
+    chapterIds: ['distance-trishuli'],
   },
 ] satisfies MapOverlay[]

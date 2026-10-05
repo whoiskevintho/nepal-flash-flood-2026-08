@@ -4,7 +4,7 @@ import { BeforeAfterSlider } from './components/BeforeAfterSlider'
 import { ChapterVideoPlayer } from './components/ChapterVideoPlayer'
 import { HighlightedText } from './components/HighlightedText'
 import { TerrainMap, type TerrainMapHandle } from './components/TerrainMap'
-import { globalMapOverlays, storyChapters } from './data/cameraChapters'
+import { mapOverlays, storyChapters } from './data/cameraChapters'
 import {
   activeTextBox,
   camerasNearlyEqual,
@@ -21,9 +21,9 @@ import type { MapCamera, MapOverlay } from './types/mapCamera'
 const devMode = import.meta.env.DEV
 
 function overlaysFor(chapterId: string): MapOverlay[] {
-  const chapter = storyChapters.find((item) => item.id === chapterId) ?? storyChapters[0]
-
-  return [...globalMapOverlays, ...(chapter.overlays ?? [])]
+  return mapOverlays.filter(
+    (overlay) => !overlay.chapterIds || overlay.chapterIds.includes(chapterId),
+  )
 }
 
 function App() {

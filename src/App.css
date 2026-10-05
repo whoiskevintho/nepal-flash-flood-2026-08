@@ -13,6 +13,77 @@
   height: 100svh;
 }
 
+/* Map labels from `mapOverlays`. Sizes are screen pixels and don't change with zoom. */
+.map-label {
+  display: flex;
+  align-items: center;
+  gap: 0.15em;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 20px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 2px #111,
+    0 0 2px #111,
+    0 0 4px #111;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.map-label.is-visible {
+  opacity: 1;
+}
+
+.map-label-italic {
+  font-style: italic;
+}
+
+/* Gap between the text, or its arrow, and the point. */
+.map-label-above {
+  flex-direction: column;
+  padding-bottom: 0.3em;
+}
+
+.map-label-below {
+  flex-direction: column-reverse;
+  padding-top: 0.3em;
+}
+
+.map-label-left {
+  flex-direction: row;
+  padding-right: 0.3em;
+}
+
+.map-label-right {
+  flex-direction: row-reverse;
+  padding-left: 0.3em;
+}
+
+.map-label-arrow svg {
+  display: block;
+  width: 1.4em;
+  height: 1.4em;
+  fill: currentColor;
+  stroke: #111;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.map-label-below .map-label-arrow svg {
+  transform: rotate(180deg);
+}
+
+.map-label-left .map-label-arrow svg {
+  transform: rotate(-90deg);
+}
+
+.map-label-right .map-label-arrow svg {
+  transform: rotate(90deg);
+}
+
 .story-track {
   position: relative;
   z-index: 1;

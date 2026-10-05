@@ -1,7 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import type { FeatureCollection, Point } from 'geojson'
 import * as maplibregl from 'maplibre-gl'
 import { setWorkerUrl } from 'maplibre-gl'
 import type {
+  ExpressionSpecification,
   LayerSpecification,
   RasterDEMSourceSpecification,
   RasterSourceSpecification,
@@ -9,7 +11,13 @@ import type {
 } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { MapCamera, MapOverlay } from '../types/mapCamera'
+import type {
+  MapCamera,
+  MapLabelOverlay,
+  MapLabelPlacement,
+  MapOverlay,
+  MapShapeOverlay,
+} from '../types/mapCamera'
 
 import { Protocol } from 'pmtiles'
 
@@ -18,12 +26,20 @@ setWorkerUrl(maplibreWorkerUrl)
 const SATELLITE_SOURCE_ID = 'satelliteSource'
 const TERRAIN_SOURCE_ID = 'terrainSource'
 const OVERLAY_ID_PREFIX = 'geojson-overlay'
-const PLACE_LABELS_SOURCE_ID = 'place-labels'
-const PLACE_LABELS_LAYER_ID = 'place-labels'
-const PLACE_LABELS_DATA = '/data/locations.geojson'
-const VIDEO_LABELS_SOURCE_ID = 'video-labels'
-const VIDEO_LABELS_LAYER_ID = 'video-labels'
-const VIDEO_LABELS_DATA = '/data/video_locations.geojson'
+const OVERLAY_FADE_MS = 700
+const OVERLAY_FADE = { duration: OVERLAY_FADE_MS, delay: 0 }
+const LABEL_SIZE_PX = 18
+/** How much bigger label text is at zoom 16 than at zoom 10. */
+const LABEL_ZOOM_GROWTH = 28 / 18
+const LABEL_COLOR = '#ffffff'
+const LABEL_HALO_COLOR = '#111111'
+const LABEL_FONT = 'Noto Sans Regular'
+const LABEL_ITALIC_FONT = 'Noto Sans Italic'
+/** Arrow length as a multiple of the label's text size. */
+const ARROW_LENGTH_EMS = 1.4
+const ARROW_LENGTH_PX = 28
+const ARROW_WIDTH_PX = 20
+const ARROW_PIXEL_RATIO = 2
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
 const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
@@ -31,13 +47,23 @@ const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrariu
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
   tiles: [
-    'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
   ],
   tileSize: 256,
-  attribution:
-    'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
-  maxzoom: 14,
+  attribution: 'Satellite imagery © MapTiler',
+  maxzoom: 22,
 }
+
+// const satelliteSource: RasterSourceSpecification = {
+//   type: 'raster',
+//   tiles: [
+//     'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+//   ],
+//   tileSize: 256,
+//   attribution:
+//     'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
+//   maxzoom: 14,
+// }
 
 // const demSource: RasterDEMSourceSpecification = {
 //   type: 'raster-dem',
@@ -77,77 +103,184 @@ function getOverlayOutlineLayerId(overlay: MapOverlay) {
   return `${OVERLAY_ID_PREFIX}-outline-${getSafeOverlayId(overlay)}`
 }
 
-function getOverlayFillLayer(overlay: MapOverlay): LayerSpecification {
+function getOverlayLabelLayerId(overlay: MapOverlay) {
+  return `${OVERLAY_ID_PREFIX}-labels-${getSafeOverlayId(overlay)}`
+}
+
+function getOverlayFillLayer(overlay: MapShapeOverlay): LayerSpecification {
   return {
     id: getOverlayFillLayerId(overlay),
     type: 'fill',
     source: getOverlaySourceId(overlay),
     paint: {
       'fill-color': overlay.fillColor ?? '#d71920',
-      'fill-opacity': overlay.fillOpacity ?? 0.24,
+      'fill-opacity': 0,
+      'fill-opacity-transition': OVERLAY_FADE,
     },
   }
 }
 
-function getOverlayOutlineLayer(overlay: MapOverlay): LayerSpecification {
+function getOverlayOutlineLayer(overlay: MapShapeOverlay): LayerSpecification {
   return {
     id: getOverlayOutlineLayerId(overlay),
     type: 'line',
     source: getOverlaySourceId(overlay),
     paint: {
       'line-color': overlay.lineColor ?? overlay.fillColor ?? '#d71920',
-      'line-opacity': 1,
+      'line-opacity': 0,
+      'line-opacity-transition': OVERLAY_FADE,
       'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 15, 5, 18, 8],
     },
   }
 }
 
-function getPlaceLabelsLayer(): LayerSpecification {
+type ArrowDirection = 'down' | 'up' | 'left' | 'right'
+
+const LABEL_PLACEMENTS: Record<
+  MapLabelPlacement,
+  { anchor: 'bottom' | 'top' | 'right' | 'left'; arrow: ArrowDirection; offset: [number, number] }
+> = {
+  above: { anchor: 'bottom', arrow: 'down', offset: [0, -1] },
+  below: { anchor: 'top', arrow: 'up', offset: [0, 1] },
+  left: { anchor: 'right', arrow: 'right', offset: [-1, 0] },
+  right: { anchor: 'left', arrow: 'left', offset: [1, 0] },
+}
+
+const ARROW_ROTATIONS: Record<ArrowDirection, number> = {
+  down: 0,
+  left: Math.PI / 2,
+  up: Math.PI,
+  right: -Math.PI / 2,
+}
+
+function scaledLabelSize(scale: number): ExpressionSpecification {
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    10,
+    ['*', ['get', 'size'], scale],
+    16,
+    ['*', ['get', 'size'], scale * LABEL_ZOOM_GROWTH],
+  ]
+}
+
+function createArrowImage(direction: ArrowDirection, color: string) {
+  const vertical = direction === 'down' || direction === 'up'
+  const width = (vertical ? ARROW_WIDTH_PX : ARROW_LENGTH_PX) * ARROW_PIXEL_RATIO
+  const height = (vertical ? ARROW_LENGTH_PX : ARROW_WIDTH_PX) * ARROW_PIXEL_RATIO
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('Canvas 2D is not available to draw map arrows.')
+  }
+
+  context.translate(width / 2, height / 2)
+  context.rotate(ARROW_ROTATIONS[direction])
+  context.scale(ARROW_PIXEL_RATIO, ARROW_PIXEL_RATIO)
+
+  const tipY = ARROW_LENGTH_PX / 2 - 2
+  const tailY = -tipY
+  const headY = tipY - 11
+  const headHalfWidth = ARROW_WIDTH_PX / 2 - 2
+  const shaftHalfWidth = 3
+
+  context.beginPath()
+  context.moveTo(-shaftHalfWidth, tailY)
+  context.lineTo(shaftHalfWidth, tailY)
+  context.lineTo(shaftHalfWidth, headY)
+  context.lineTo(headHalfWidth, headY)
+  context.lineTo(0, tipY)
+  context.lineTo(-headHalfWidth, headY)
+  context.lineTo(-shaftHalfWidth, headY)
+  context.closePath()
+  context.lineJoin = 'round'
+  context.lineWidth = 3
+  context.strokeStyle = LABEL_HALO_COLOR
+  context.stroke()
+  context.fillStyle = color
+  context.fill()
+
+  return context.getImageData(0, 0, width, height)
+}
+
+function ensureArrowImage(map: maplibregl.Map, direction: ArrowDirection, color: string) {
+  const imageId = `${OVERLAY_ID_PREFIX}-arrow-${direction}-${color}`
+
+  if (!map.hasImage(imageId)) {
+    map.addImage(imageId, createArrowImage(direction, color), { pixelRatio: ARROW_PIXEL_RATIO })
+  }
+
+  return imageId
+}
+
+function getLabelOverlayData(
+  map: maplibregl.Map,
+  overlay: MapLabelOverlay,
+): FeatureCollection<Point> {
   return {
-    id: PLACE_LABELS_LAYER_ID,
-    type: 'symbol',
-    source: PLACE_LABELS_SOURCE_ID,
-    layout: {
-      'text-field': ['get', 'Location'],
-      'text-font': ['Noto Sans Regular'],
-      'text-size': ['interpolate', ['linear'], ['zoom'], 10, 18, 16, 28],
-      'text-anchor': 'bottom',
-      'text-offset': [0, -0.5],
-      'text-pitch-alignment': 'viewport',
-      'text-rotation-alignment': 'viewport',
-      'text-allow-overlap': true,
-      'symbol-height-anchor': 'ground',
-      'symbol-height-offset': 40,
-    },
-    paint: {
-      'text-color': '#ffffff',
-      'text-halo-color': '#111111',
-      'text-halo-width': 1.5,
-    },
+    type: 'FeatureCollection',
+    features: overlay.labels.map((label) => {
+      const placement = LABEL_PLACEMENTS[label.placement ?? 'above']
+      const color = label.color ?? LABEL_COLOR
+      const offsetEms = label.arrow ? ARROW_LENGTH_EMS + 0.25 : 0.5
+
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: label.coordinates },
+        properties: {
+          text: label.text,
+          color,
+          italic: label.italic ?? false,
+          size: label.size ?? LABEL_SIZE_PX,
+          anchor: placement.anchor,
+          textOffset: [placement.offset[0] * offsetEms, placement.offset[1] * offsetEms],
+          arrowImage: label.arrow ? ensureArrowImage(map, placement.arrow, color) : '',
+        },
+      }
+    }),
   }
 }
 
-function getVideoLabelsLayer(): LayerSpecification {
+function getOverlayLabelLayer(overlay: MapLabelOverlay): LayerSpecification {
   return {
-    id: VIDEO_LABELS_LAYER_ID,
+    id: getOverlayLabelLayerId(overlay),
     type: 'symbol',
-    source: VIDEO_LABELS_SOURCE_ID,
+    source: getOverlaySourceId(overlay),
     layout: {
-      'text-field': ['get', 'video'],
-      'text-font': ['Noto Sans Regular'],
-      'text-size': ['interpolate', ['linear'], ['zoom'], 10, 14, 16, 28],
-      'text-anchor': 'top',
-      'text-offset': [0, 0.6],
+      'text-field': ['get', 'text'],
+      'text-font': [
+        'case',
+        ['get', 'italic'],
+        ['literal', [LABEL_ITALIC_FONT]],
+        ['literal', [LABEL_FONT]],
+      ],
+      'text-size': scaledLabelSize(1),
+      'text-anchor': ['get', 'anchor'],
+      'text-offset': ['get', 'textOffset'],
       'text-pitch-alignment': 'viewport',
       'text-rotation-alignment': 'viewport',
       'text-allow-overlap': true,
+      'icon-image': ['get', 'arrowImage'],
+      'icon-anchor': ['get', 'anchor'],
+      'icon-size': scaledLabelSize(ARROW_LENGTH_EMS / ARROW_LENGTH_PX),
+      'icon-pitch-alignment': 'viewport',
+      'icon-rotation-alignment': 'viewport',
+      'icon-allow-overlap': true,
       'symbol-height-anchor': 'ground',
       'symbol-height-offset': 40,
     },
     paint: {
-      'text-color': '#ffd400',
-      'text-halo-color': '#111111',
+      'text-color': ['get', 'color'],
+      'text-halo-color': LABEL_HALO_COLOR,
       'text-halo-width': 1.5,
+      'text-opacity': 0,
+      'text-opacity-transition': OVERLAY_FADE,
+      'icon-opacity': 0,
+      'icon-opacity-transition': OVERLAY_FADE,
     },
   }
 }
@@ -162,87 +295,168 @@ const terrainStyle: StyleSpecification = {
   layers: [satelliteLayer],
 }
 
-function removeStaleOverlays(map: maplibregl.Map, keepSourceIds: Set<string>) {
-  const style = map.getStyle()
+const pendingOverlayRemovals = new WeakMap<
+  maplibregl.Map,
+  Map<string, ReturnType<typeof setTimeout>>
+>()
 
-  style.layers
-    ?.filter(
-      (layer) =>
-        layer.id.startsWith(`${OVERLAY_ID_PREFIX}-`) &&
-        'source' in layer &&
-        !keepSourceIds.has(layer.source),
-    )
-    .forEach((layer) => {
-      map.removeLayer(layer.id)
+function getPendingOverlayRemovals(map: maplibregl.Map) {
+  let pending = pendingOverlayRemovals.get(map)
+
+  if (!pending) {
+    pending = new Map()
+    pendingOverlayRemovals.set(map, pending)
+  }
+
+  return pending
+}
+
+function clearPendingOverlayRemovals(map: maplibregl.Map) {
+  pendingOverlayRemovals.get(map)?.forEach((timeout) => clearTimeout(timeout))
+  pendingOverlayRemovals.delete(map)
+}
+
+function showOverlay(map: maplibregl.Map, overlay: MapOverlay) {
+  if (overlay.labels) {
+    const labelLayerId = getOverlayLabelLayerId(overlay)
+
+    if (map.getLayer(labelLayerId)) {
+      map.setPaintProperty(labelLayerId, 'text-opacity', 1)
+      map.setPaintProperty(labelLayerId, 'icon-opacity', 1)
+    }
+
+    return
+  }
+
+  const fillLayerId = getOverlayFillLayerId(overlay)
+  const outlineLayerId = getOverlayOutlineLayerId(overlay)
+
+  if (map.getLayer(fillLayerId)) {
+    map.setPaintProperty(fillLayerId, 'fill-opacity', overlay.fillOpacity ?? 0.24)
+  }
+
+  if (map.getLayer(outlineLayerId)) {
+    map.setPaintProperty(outlineLayerId, 'line-opacity', 1)
+  }
+}
+
+function showOverlayWhenLoaded(map: maplibregl.Map, overlay: MapOverlay) {
+  const sourceId = getOverlaySourceId(overlay)
+
+  const onSourceData = () => {
+    if (!map.getSource(sourceId)) {
+      map.off('sourcedata', onSourceData)
+      return
+    }
+
+    if (!map.isSourceLoaded(sourceId)) {
+      return
+    }
+
+    map.off('sourcedata', onSourceData)
+
+    if (!getPendingOverlayRemovals(map).has(sourceId)) {
+      showOverlay(map, overlay)
+    }
+  }
+
+  map.on('sourcedata', onSourceData)
+}
+
+function addOverlay(map: maplibregl.Map, overlay: MapOverlay) {
+  if (overlay.labels) {
+    map.addSource(getOverlaySourceId(overlay), {
+      type: 'geojson',
+      data: getLabelOverlayData(map, overlay),
+    })
+    map.addLayer(getOverlayLabelLayer(overlay))
+  } else {
+    map.addSource(getOverlaySourceId(overlay), {
+      type: 'geojson',
+      data: overlay.data,
     })
 
-  Object.keys(style.sources)
+    if (overlay.fillColor) {
+      map.addLayer(getOverlayFillLayer(overlay))
+    }
+
+    map.addLayer(getOverlayOutlineLayer(overlay))
+  }
+
+  showOverlayWhenLoaded(map, overlay)
+}
+
+type OpacityProperty = 'fill-opacity' | 'line-opacity' | 'text-opacity' | 'icon-opacity'
+
+const OPACITY_PROPERTIES: Partial<Record<LayerSpecification['type'], OpacityProperty[]>> = {
+  fill: ['fill-opacity'],
+  line: ['line-opacity'],
+  symbol: ['text-opacity', 'icon-opacity'],
+}
+
+function fadeOutOverlay(map: maplibregl.Map, sourceId: string) {
+  const pending = getPendingOverlayRemovals(map)
+
+  if (pending.has(sourceId)) {
+    return
+  }
+
+  const layerIds = (map.getStyle().layers ?? [])
+    .filter((layer) => 'source' in layer && layer.source === sourceId)
+    .map((layer) => {
+      OPACITY_PROPERTIES[layer.type]?.forEach((property) => {
+        map.setPaintProperty(layer.id, property, 0)
+      })
+      return layer.id
+    })
+
+  pending.set(
+    sourceId,
+    setTimeout(() => {
+      pending.delete(sourceId)
+      layerIds
+        .filter((layerId) => map.getLayer(layerId))
+        .forEach((layerId) => map.removeLayer(layerId))
+
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId)
+      }
+    }, OVERLAY_FADE_MS),
+  )
+}
+
+function bringLabelsToFront(map: maplibregl.Map) {
+  map
+    .getStyle()
+    .layers?.filter((layer) => layer.id.startsWith(`${OVERLAY_ID_PREFIX}-labels-`))
+    .forEach((layer) => {
+      map.moveLayer(layer.id)
+    })
+}
+
+function setActiveOverlays(map: maplibregl.Map, overlays: MapOverlay[]) {
+  const keepSourceIds = new Set(overlays.map(getOverlaySourceId))
+  const pending = getPendingOverlayRemovals(map)
+
+  Object.keys(map.getStyle().sources)
     .filter(
       (sourceId) =>
         sourceId.startsWith(`${OVERLAY_ID_PREFIX}-source-`) && !keepSourceIds.has(sourceId),
     )
-    .forEach((sourceId) => {
-      map.removeSource(sourceId)
-    })
-}
+    .forEach((sourceId) => fadeOutOverlay(map, sourceId))
 
-function addOverlay(map: maplibregl.Map, overlay: MapOverlay) {
-  map.addSource(getOverlaySourceId(overlay), {
-    type: 'geojson',
-    data: overlay.data,
-  })
+  overlays.forEach((overlay) => {
+    const sourceId = getOverlaySourceId(overlay)
+    const pendingRemoval = pending.get(sourceId)
 
-  if (overlay.fillColor) {
-    map.addLayer(getOverlayFillLayer(overlay))
-  }
-
-  map.addLayer(getOverlayOutlineLayer(overlay))
-}
-
-function addPlaceLabels(map: maplibregl.Map) {
-  if (!map.getSource(PLACE_LABELS_SOURCE_ID)) {
-    map.addSource(PLACE_LABELS_SOURCE_ID, {
-      type: 'geojson',
-      data: PLACE_LABELS_DATA,
-    })
-  }
-
-  if (!map.getLayer(PLACE_LABELS_LAYER_ID)) {
-    map.addLayer(getPlaceLabelsLayer())
-  }
-}
-
-function addVideoLabels(map: maplibregl.Map) {
-  if (!map.getSource(VIDEO_LABELS_SOURCE_ID)) {
-    map.addSource(VIDEO_LABELS_SOURCE_ID, {
-      type: 'geojson',
-      data: VIDEO_LABELS_DATA,
-    })
-  }
-
-  if (!map.getLayer(VIDEO_LABELS_LAYER_ID)) {
-    map.addLayer(getVideoLabelsLayer())
-  }
-}
-
-function bringLabelsToFront(map: maplibregl.Map) {
-  if (map.getLayer(PLACE_LABELS_LAYER_ID)) {
-    map.moveLayer(PLACE_LABELS_LAYER_ID)
-  }
-
-  if (map.getLayer(VIDEO_LABELS_LAYER_ID)) {
-    map.moveLayer(VIDEO_LABELS_LAYER_ID)
-  }
-}
-
-function setActiveOverlays(map: maplibregl.Map, overlays: MapOverlay[]) {
-  removeStaleOverlays(map, new Set(overlays.map(getOverlaySourceId)))
-
-  overlays
-    .filter((overlay) => !map.getSource(getOverlaySourceId(overlay)))
-    .forEach((overlay) => {
+    if (pendingRemoval) {
+      clearTimeout(pendingRemoval)
+      pending.delete(sourceId)
+      showOverlay(map, overlay)
+    } else if (!map.getSource(sourceId)) {
       addOverlay(map, overlay)
-    })
+    }
+  })
 
   bringLabelsToFront(map)
 }
@@ -424,8 +638,6 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
 
     map.once('load', () => {
       setActiveOverlays(map, overlaysRef.current)
-      addPlaceLabels(map)
-      addVideoLabels(map)
       map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION })
       map.setSky({})
 
@@ -449,6 +661,7 @@ export const TerrainMap = forwardRef<TerrainMapHandle, TerrainMapProps>(function
     mapRef.current = map
 
     return () => {
+      clearPendingOverlayRemovals(map)
       map.remove()
       mapRef.current = null
       terrainReadyRef.current = false
