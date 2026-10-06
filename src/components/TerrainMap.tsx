@@ -13,6 +13,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type {
   MapCamera,
+  MapLabel,
   MapLabelOverlay,
   MapLabelPlacement,
   MapOverlay,
@@ -33,53 +34,58 @@ const LABEL_SIZE_PX = 18
 const LABEL_ZOOM_GROWTH = 28 / 18
 const LABEL_COLOR = '#ffffff'
 const LABEL_HALO_COLOR = '#111111'
+const LABEL_HALO_WIDTH = 0.75
 const LABEL_FONT = 'Noto Sans Regular'
 const LABEL_ITALIC_FONT = 'Noto Sans Italic'
-/** Arrow length as a multiple of the label's text size. */
-const ARROW_LENGTH_EMS = 1.4
-const ARROW_LENGTH_PX = 28
-const ARROW_WIDTH_PX = 20
-const ARROW_PIXEL_RATIO = 2
+/** Leader length, from the point to the text, as a multiple of the label's text size. */
+const LEADER_LENGTH_EMS = 1.7
+const LEADER_LENGTH_PX = 34
+const ARROW_LENGTH_PX = 22
+const LEADER_DOT_RADIUS_PX = 4.5
+const LEADER_LINE_WIDTH_PX = 2.25
+/** Clear space between the dot and the line or arrow. */
+const MARKER_GAP_PX = 8
+const LEADER_PIXEL_RATIO = 2
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
-// const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
-
-const satelliteSource: RasterSourceSpecification = {
-  type: 'raster',
-  tiles: [
-    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
-  ],
-  tileSize: 256,
-  attribution: 'Satellite imagery © MapTiler',
-  maxzoom: 22,
-}
+const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
 // const satelliteSource: RasterSourceSpecification = {
 //   type: 'raster',
 //   tiles: [
-//     'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+//     `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
 //   ],
 //   tileSize: 256,
-//   attribution:
-//     'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
-//   maxzoom: 14,
+//   attribution: 'Satellite imagery © MapTiler',
+//   maxzoom: 22,
 // }
 
-const demSource: RasterDEMSourceSpecification = {
-  type: 'raster-dem',
-  url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
-  encoding: 'terrarium',
+const satelliteSource: RasterSourceSpecification = {
+  type: 'raster',
+  tiles: [
+    'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+  ],
   tileSize: 256,
+  attribution:
+    'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
   maxzoom: 14,
 }
 
 // const demSource: RasterDEMSourceSpecification = {
 //   type: 'raster-dem',
-//   tiles: TERRARIUM_TILES,
+//   url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
 //   encoding: 'terrarium',
 //   tileSize: 256,
-//   maxzoom: 15,
+//   maxzoom: 14,
 // }
+
+const demSource: RasterDEMSourceSpecification = {
+  type: 'raster-dem',
+  tiles: TERRARIUM_TILES,
+  encoding: 'terrarium',
+  tileSize: 256,
+  maxzoom: 15,
+}
 
 const satelliteLayer: LayerSpecification = {
   id: 'satellite',
@@ -141,24 +147,24 @@ function getOverlayOutlineLayer(overlay: MapShapeOverlay): LayerSpecification {
   }
 }
 
-type ArrowDirection = 'down' | 'up' | 'left' | 'right'
-
-const LABEL_PLACEMENTS: Record<
-  MapLabelPlacement,
-  { anchor: 'bottom' | 'top' | 'right' | 'left'; arrow: ArrowDirection; offset: [number, number] }
-> = {
-  above: { anchor: 'bottom', arrow: 'down', offset: [0, -1] },
-  below: { anchor: 'top', arrow: 'up', offset: [0, 1] },
-  left: { anchor: 'right', arrow: 'right', offset: [-1, 0] },
-  right: { anchor: 'left', arrow: 'left', offset: [1, 0] },
+/** Clockwise degrees from straight up. `placement` is the four main directions. */
+const PLACEMENT_BEARING: Record<MapLabelPlacement, number> = {
+  above: 0,
+  right: 90,
+  below: 180,
+  left: 270,
 }
 
-const ARROW_ROTATIONS: Record<ArrowDirection, number> = {
-  down: 0,
-  left: Math.PI / 2,
-  up: Math.PI,
-  right: -Math.PI / 2,
-}
+const TEXT_ANCHORS = [
+  'bottom',
+  'bottom-left',
+  'left',
+  'top-left',
+  'top',
+  'top-right',
+  'right',
+  'bottom-right',
+] as const
 
 function scaledLabelSize(scale: number): ExpressionSpecification {
   return [
@@ -172,53 +178,142 @@ function scaledLabelSize(scale: number): ExpressionSpecification {
   ]
 }
 
-function createArrowImage(direction: ArrowDirection, color: string) {
-  const vertical = direction === 'down' || direction === 'up'
-  const width = (vertical ? ARROW_WIDTH_PX : ARROW_LENGTH_PX) * ARROW_PIXEL_RATIO
-  const height = (vertical ? ARROW_LENGTH_PX : ARROW_WIDTH_PX) * ARROW_PIXEL_RATIO
+function normalizeBearing(degrees: number) {
+  return ((degrees % 360) + 360) % 360
+}
+
+function textBearingOf(label: MapLabel) {
+  return normalizeBearing(
+    label.textBearing ?? label.bearing ?? PLACEMENT_BEARING[label.placement ?? 'above'],
+  )
+}
+
+function textAnchorForBearing(bearing: number) {
+  return TEXT_ANCHORS[Math.round(bearing / 45) % 8]
+}
+
+type CalloutParts = {
+  dot: boolean
+  line: boolean
+}
+
+/** Canvas pixels of black that display as `LABEL_HALO_WIDTH` once the icon is scaled. */
+function calloutHaloPx(labelSize: number) {
+  const iconScale = labelSize * (LEADER_LENGTH_EMS / LEADER_LENGTH_PX) * LABEL_ZOOM_GROWTH
+  return LABEL_HALO_WIDTH / iconScale
+}
+
+function createCalloutImage(color: string, parts: CalloutParts, haloPx: number) {
+  const logical = (LEADER_LENGTH_PX + 8) * 2
   const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  canvas.width = logical * LEADER_PIXEL_RATIO
+  canvas.height = logical * LEADER_PIXEL_RATIO
   const context = canvas.getContext('2d')
 
   if (!context) {
-    throw new Error('Canvas 2D is not available to draw map arrows.')
+    throw new Error('Canvas 2D is not available to draw map labels.')
   }
 
-  context.translate(width / 2, height / 2)
-  context.rotate(ARROW_ROTATIONS[direction])
-  context.scale(ARROW_PIXEL_RATIO, ARROW_PIXEL_RATIO)
+  context.scale(LEADER_PIXEL_RATIO, LEADER_PIXEL_RATIO)
+  const center = logical / 2
+  const tailY = center - LEADER_LENGTH_PX
+  const dotClearance = parts.dot ? LEADER_DOT_RADIUS_PX + haloPx + MARKER_GAP_PX : 0
+  const tipY = center - dotClearance
 
-  const tipY = ARROW_LENGTH_PX / 2 - 2
-  const tailY = -tipY
-  const headY = tipY - 11
-  const headHalfWidth = ARROW_WIDTH_PX / 2 - 2
-  const shaftHalfWidth = 3
+  if (parts.line) {
+    const strokeLine = (width: number, stroke: string) => {
+      context.beginPath()
+      context.moveTo(center, tipY)
+      context.lineTo(center, tailY)
+      context.lineCap = 'round'
+      context.lineWidth = width
+      context.strokeStyle = stroke
+      context.stroke()
+    }
 
-  context.beginPath()
-  context.moveTo(-shaftHalfWidth, tailY)
-  context.lineTo(shaftHalfWidth, tailY)
-  context.lineTo(shaftHalfWidth, headY)
-  context.lineTo(headHalfWidth, headY)
-  context.lineTo(0, tipY)
-  context.lineTo(-headHalfWidth, headY)
-  context.lineTo(-shaftHalfWidth, headY)
-  context.closePath()
-  context.lineJoin = 'round'
-  context.lineWidth = 3
-  context.strokeStyle = LABEL_HALO_COLOR
-  context.stroke()
-  context.fillStyle = color
-  context.fill()
+    strokeLine(LEADER_LINE_WIDTH_PX + haloPx * 2, LABEL_HALO_COLOR)
+    strokeLine(LEADER_LINE_WIDTH_PX, color)
+  }
 
-  return context.getImageData(0, 0, width, height)
+  if (parts.dot) {
+    context.beginPath()
+    context.arc(center, center, LEADER_DOT_RADIUS_PX + haloPx, 0, Math.PI * 2)
+    context.fillStyle = LABEL_HALO_COLOR
+    context.fill()
+    context.beginPath()
+    context.arc(center, center, LEADER_DOT_RADIUS_PX, 0, Math.PI * 2)
+    context.fillStyle = color
+    context.fill()
+  }
+
+  return context.getImageData(0, 0, canvas.width, canvas.height)
 }
 
-function ensureArrowImage(map: maplibregl.Map, direction: ArrowDirection, color: string) {
-  const imageId = `${OVERLAY_ID_PREFIX}-arrow-${direction}-${color}`
+function createArrowImage(color: string, gapPx: number, haloPx: number) {
+  const logical = (LEADER_LENGTH_PX + 8) * 2
+  const canvas = document.createElement('canvas')
+  canvas.width = logical * LEADER_PIXEL_RATIO
+  canvas.height = logical * LEADER_PIXEL_RATIO
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('Canvas 2D is not available to draw map labels.')
+  }
+
+  context.scale(LEADER_PIXEL_RATIO, LEADER_PIXEL_RATIO)
+  const center = logical / 2
+  const tailY = center - gapPx
+  const tipY = tailY - ARROW_LENGTH_PX
+  const headBaseY = tipY + 12
+  const headHalf = 8
+  const shaftHalf = 2.4
+
+  const drawArrow = (stroke: string | null, fill: string | null) => {
+    context.beginPath()
+    context.moveTo(center - shaftHalf, tailY)
+    context.lineTo(center + shaftHalf, tailY)
+    context.lineTo(center + shaftHalf, headBaseY)
+    context.lineTo(center + headHalf, headBaseY)
+    context.lineTo(center, tipY)
+    context.lineTo(center - headHalf, headBaseY)
+    context.lineTo(center - shaftHalf, headBaseY)
+    context.closePath()
+    context.lineJoin = 'round'
+
+    if (stroke) {
+      context.lineWidth = haloPx * 2
+      context.strokeStyle = stroke
+      context.stroke()
+    }
+
+    if (fill) {
+      context.fillStyle = fill
+      context.fill()
+    }
+  }
+
+  drawArrow(LABEL_HALO_COLOR, null)
+  drawArrow(null, color)
+
+  return context.getImageData(0, 0, canvas.width, canvas.height)
+}
+
+function ensureCalloutImage(map: maplibregl.Map, color: string, parts: CalloutParts, labelSize: number) {
+  const haloPx = calloutHaloPx(labelSize)
+  const imageId = `${OVERLAY_ID_PREFIX}-callout-${color}-${parts.dot ? 'd' : ''}${parts.line ? 'l' : ''}-${haloPx.toFixed(3)}`
 
   if (!map.hasImage(imageId)) {
-    map.addImage(imageId, createArrowImage(direction, color), { pixelRatio: ARROW_PIXEL_RATIO })
+    map.addImage(imageId, createCalloutImage(color, parts, haloPx), { pixelRatio: LEADER_PIXEL_RATIO })
+  }
+
+  return imageId
+}
+
+function ensureArrowImage(map: maplibregl.Map, color: string, gapPx: number, haloPx: number) {
+  const imageId = `${OVERLAY_ID_PREFIX}-arrow-${color}-${gapPx}-${haloPx.toFixed(3)}`
+
+  if (!map.hasImage(imageId)) {
+    map.addImage(imageId, createArrowImage(color, gapPx, haloPx), { pixelRatio: LEADER_PIXEL_RATIO })
   }
 
   return imageId
@@ -230,24 +325,59 @@ function getLabelOverlayData(
 ): FeatureCollection<Point> {
   return {
     type: 'FeatureCollection',
-    features: overlay.labels.map((label) => {
-      const placement = LABEL_PLACEMENTS[label.placement ?? 'above']
+    features: overlay.labels.flatMap((label) => {
+      const textBearing = textBearingOf(label)
       const color = label.color ?? LABEL_COLOR
-      const offsetEms = label.arrow ? ARROW_LENGTH_EMS + 0.25 : 0.5
-
-      return {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: label.coordinates },
-        properties: {
-          text: label.text,
-          color,
-          italic: label.italic ?? false,
-          size: label.size ?? LABEL_SIZE_PX,
-          anchor: placement.anchor,
-          textOffset: [placement.offset[0] * offsetEms, placement.offset[1] * offsetEms],
-          arrowImage: label.arrow ? ensureArrowImage(map, placement.arrow, color) : '',
+      const radians = (textBearing * Math.PI) / 180
+      const showDot = label.dot ?? false
+      const showLine = label.line ?? showDot
+      const showArrow = label.arrow === true || label.arrowBearing !== undefined
+      const arrowBearing = normalizeBearing(label.arrowBearing ?? textBearing)
+      const labelSize = label.size ?? LABEL_SIZE_PX
+      const offsetEms = showLine ? LEADER_LENGTH_EMS + 0.35 : showDot ? 0.9 : 0.5
+      const features: FeatureCollection<Point>['features'] = [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: label.coordinates },
+          properties: {
+            text: label.text,
+            color,
+            italic: label.italic ?? false,
+            size: labelSize,
+            bearing: textBearing,
+            anchor: textAnchorForBearing(textBearing),
+            textOffset: [Math.sin(radians) * offsetEms, -Math.cos(radians) * offsetEms],
+            calloutImage:
+              showDot || showLine
+                ? ensureCalloutImage(map, color, { dot: showDot, line: showLine }, labelSize)
+                : '',
+          },
         },
+      ]
+
+      if (showArrow) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: label.coordinates },
+          properties: {
+            text: '',
+            color,
+            italic: false,
+            size: labelSize,
+            bearing: arrowBearing,
+            anchor: 'center',
+            textOffset: [0, 0],
+            calloutImage: ensureArrowImage(
+              map,
+              color,
+              showDot ? LEADER_DOT_RADIUS_PX + calloutHaloPx(labelSize) + MARKER_GAP_PX : 0,
+              calloutHaloPx(labelSize),
+            ),
+          },
+        })
       }
+
+      return features
     }),
   }
 }
@@ -271,9 +401,10 @@ function getOverlayLabelLayer(overlay: MapLabelOverlay): LayerSpecification {
       'text-pitch-alignment': 'viewport',
       'text-rotation-alignment': 'viewport',
       'text-allow-overlap': true,
-      'icon-image': ['get', 'arrowImage'],
-      'icon-anchor': ['get', 'anchor'],
-      'icon-size': scaledLabelSize(ARROW_LENGTH_EMS / ARROW_LENGTH_PX),
+      'icon-image': ['get', 'calloutImage'],
+      'icon-anchor': 'center',
+      'icon-rotate': ['get', 'bearing'],
+      'icon-size': scaledLabelSize(LEADER_LENGTH_EMS / LEADER_LENGTH_PX),
       'icon-pitch-alignment': 'viewport',
       'icon-rotation-alignment': 'viewport',
       'icon-allow-overlap': true,
@@ -283,7 +414,7 @@ function getOverlayLabelLayer(overlay: MapLabelOverlay): LayerSpecification {
     paint: {
       'text-color': ['get', 'color'],
       'text-halo-color': LABEL_HALO_COLOR,
-      'text-halo-width': 1.5,
+      'text-halo-width': LABEL_HALO_WIDTH,
       'text-opacity': 0,
       'text-opacity-transition': OVERLAY_FADE,
       'icon-opacity': 0,

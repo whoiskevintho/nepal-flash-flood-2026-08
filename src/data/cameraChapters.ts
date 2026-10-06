@@ -22,7 +22,7 @@ function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
 
 export const storyIntro = {
   kicker: 'Visual story',
-  title: 'Understanding the scale of the floods in Nepal',
+  title: 'The scale of the floods in Nepal',
   deck: 'A visual story following the path of the torrential August flash flood in Nepal. Features eyewitness video and satellite imagery.',
   author: 'Kevin Young',
   authorHref: 'https://whoiskevintho.com/',
@@ -44,7 +44,7 @@ export const storyEnd: {
   kicker: 'Sources',
   title: '',
   methodology:
-    'Distances, elevations, and the outline of the glacierthat detached were measured from satellite imagery in QGIS. Eyewitness footage is sourced from facebook and the 2026 Himalayan Tragedy Archive Youtube page. Individual video sources are linked above each video throughout the story. ',
+    'The distances and elevations were measured from satellite imagery in QGIS. Eyewitness footage is sourced from facebook and the 2026 Himalayan Tragedy Archive Youtube page. Individual video sources are linked above each video throughout the story. ',
   sources: [
     {
       name: 'Copernicus Browser',
@@ -55,6 +55,11 @@ export const storyEnd: {
       name: 'Sentinel-2 cloudless, EOX',
       detail: 'Satellite imagery in the map, modified Copernicus Sentinel data 2024.',
       href: 'https://s2maps.eu/',
+    },
+    {
+      name: 'MapTiler Satellite',
+      detail: 'Satellite imagery.',
+      href: 'https://www.maptiler.com/copyright/',
     },
     {
       name: 'AWS Terrain Tiles',
@@ -99,7 +104,7 @@ export const storyChapters = [
       ),
       pinned(
         'himalaya-overview-detail-2',
-        'It measures approximately one mile across and half a mile tall and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet, meaning the debris fell nearly a mile at the start of this torrential collapse.',
+        'It measures approximately one mile across and half a mile tall and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet, meaning the debris fell nearly a mile at the start of the torrential debris flow.',
         90,
         36,
       ),
@@ -247,13 +252,13 @@ export const storyChapters = [
     boxes: [
       pinned(
         'work-site-detail',
-        'Workers and witnesses captured the debris flow as it rapidly approached.[[yellow:Camera 1]] was filmed from the bank of the Trishuli river and captures the approaching flood. [[yellow:Camera 2]] was filmed from a higher elevation.',
+        'Workers and witnesses captured the debris flow as it rapidly approached.[[yellow:Camera 3]] was filmed from the bank of the Trishuli river and captures the approaching flood. [[yellow:Camera 4]] was filmed from a higher elevation.',
         100,
         36,
       ),
       {
         id: 'work-site-cameras',
-        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        text: 'The first video is footage captured by [[yellow:Camera 3]]. The second is footage from [[yellow:Camera 4]].',
         holdVh: 170,
         fadeVh: 15,
         gapVh: 36,
@@ -265,12 +270,12 @@ export const storyChapters = [
       videos: [
         {
           facebookUrl: 'https://www.facebook.com/reel/1928523987821099',
-          title: 'Camera 1',
+          title: 'Camera 3',
           sourceHref: 'https://www.facebook.com/share/v/1CGYLJchVC/',
         },
         {
           facebookUrl: 'https://www.facebook.com/reel/1538884681259185',
-          title: 'Camera 2',
+          title: 'Camera 4',
           sourceHref: 'https://www.facebook.com/share/v/1BoUyK4qLP/',
         },
       ],
@@ -324,13 +329,13 @@ export const storyChapters = [
     boxes: [
       pinned(
         'betrawati-detail',
-        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 1]] filmed from a higher elevation looking downstream, and captures the debris flow as it enters town and pushes up a tributary river. [[yellow:Camera 2]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
+        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 5]] filmed from a higher elevation looking downstream, and captures the debris flow as it enters town and pushes up a tributary river. [[yellow:Camera 6]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
         100,
         36,
       ),
       {
         id: 'betrawati-cameras',
-        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        text: 'The first video is footage captured by [[yellow:Camera 5]]. The second is footage from [[yellow:Camera 6]].',
         holdVh: 170,
         fadeVh: 15,
         gapVh: 36,
@@ -342,12 +347,12 @@ export const storyChapters = [
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
-          title: 'Camera 1',
+          title: 'Camera 5',
           sourceHref: 'https://www.youtube.com/watch?v=jnn4s6CkQs4',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
-          title: 'Camera 2',
+          title: 'Camera 6',
           sourceHref: 'https://www.youtube.com/watch?v=qjApXYPD2Ow',
         },
       ],
@@ -401,13 +406,13 @@ export const storyChapters = [
     boxes: [
       pinned(
         'trishuli-bidur-detail',
-        'Footage from [[yellow:Camera 1]] was captured by witnesses from the roof of a Buddhist temple, and shows the debris flow as it enters town. [[yellow:Camera 2]] was captured just north of the town and looks upstream as the debris flow approaches.',
+        'Footage from [[yellow:Camera 7]] was captured by witnesses from the roof of a Buddhist temple, and shows the debris flow as it enters town. [[yellow:Camera 8]] was captured just north of the town and looks upstream as the debris flow approaches.',
         90,
         36,
       ),
       {
         id: 'trishuli-cameras',
-        text: 'The first video is footage captured by [[yellow:Camera 1]]. The second is footage from [[yellow:Camera 2]].',
+        text: 'The first video is footage captured by [[yellow:Camera 7]]. The second is footage from [[yellow:Camera 8]].',
         holdVh: 170,
         fadeVh: 15,
         gapVh: 36,
@@ -419,12 +424,12 @@ export const storyChapters = [
       videos: [
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=P1AodkdPMck',
-          title: 'Camera 1',
+          title: 'Camera 7',
           sourceHref: 'https://www.youtube.com/watch?v=P1AodkdPMck',
         },
         {
           youtubeUrl: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
-          title: 'Camera 2',
+          title: 'Camera 8',
           sourceHref: 'https://www.youtube.com/watch?v=RiaeLbsMx2o&t=2s',
         },
       ],
@@ -434,18 +439,22 @@ export const storyChapters = [
 
 // Each overlay shows in the chapters listed in chapterIds, or in every chapter when omitted.
 // An overlay stays loaded while scrolling between its chapters and fades in and out at the edges.
-// Label overlays take `labels` instead of `data`. Coordinates are [longitude, latitude]:
+// Label overlays take `labels` instead of `data`. Coordinates are [longitude, latitude].
+// `textBearing` places the text, in degrees clockwise from straight up. The line follows it.
+// `dot: true` marks the coordinate and connects it to the text. `line: true` draws that line
+// without a dot. `arrow: true` adds an arrow; `arrowBearing` is the direction it points.
 // {
 //   id: 'rasuwagadi-labels',
 //   chapterIds: ['distance-glacier-rasu', 'border-crossing-rasu'],
 //   labels: [
-//     { text: 'Rasuwagadi', coordinates: [85.37702, 28.27727], arrow: true },
-//     { text: 'Camera 1', coordinates: [85.37789, 28.28041], color: '#ffd400', italic: true, placement: 'below' },
+//     { text: 'Rasuwagadi', coordinates: [85.37702, 28.27727], textBearing: 40, dot: true },
+//     { text: 'Camera 1', coordinates: [85.37789, 28.28041], color: '#ffd400', arrow: true, arrowBearing: 200 },
 //   ],
 // },
 export const mapOverlays = [
   {
     id: 'glacier-burst-shape',
+    chapterIds: ['himalaya-overview', 'distance-glacier-rasu'],
     data: '/data/glacier_burst_shape.geojson',
     fillColor: '#ffd400',
     fillOpacity: 0.22,
@@ -462,6 +471,7 @@ export const mapOverlays = [
     chapterIds: ['himalaya-overview'],
     labels: [
       { text: 'Valley floor', coordinates: [85.5104, 28.29344] },
+      { text: 'Langtang Lirung', coordinates: [85.516583, 28.256547], italic: true  },
     ],
   },
   {
@@ -475,7 +485,10 @@ export const mapOverlays = [
     id: 'border-crossing-labels',
     chapterIds: ['border-crossing-rasu'],
     labels: [
-      { text: 'Cameras 1 & 2', coordinates: [85.37789, 28.28041], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 1', coordinates: [85.37789, 28.28041], color: '#ffd400', size: 20, textBearing: 150, dot: true },
+      { text: 'Camera 2', coordinates: [85.37789, 28.28041], color: '#ffd400', size: 20, textBearing: 280, dot: true },
+      { text: 'Direction of flow', coordinates: [85.382758, 28.282321], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 },
+      { text: 'Trishuli River', coordinates: [85.369035, 28.286315], italic: true },
     ],
   },
   {
@@ -489,8 +502,9 @@ export const mapOverlays = [
     id: 'mailung-cameras-labels',
     chapterIds: ['work-site'],
     labels: [
-      { text: 'Camera 1', coordinates: [85.20785, 28.07332], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
-      { text: 'Camera 2', coordinates: [85.20367, 28.07256], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 3', coordinates: [85.20785, 28.07332], color: '#ffd400', size: 20, textBearing: 40, dot: true },
+      { text: 'Camera 4', coordinates: [85.20367, 28.07256], color: '#ffd400', size: 20, textBearing: 60, dot: true },
+      { text: 'Direction of flow', coordinates: [85.214605, 28.076906], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 }
     ],
   },
   {
@@ -504,8 +518,9 @@ export const mapOverlays = [
     id: 'betrawati-cameras-labels',
     chapterIds: ['betrawati-bazaar'],
     labels: [
-      { text: 'Camera 1', coordinates: [85.18561, 27.97566], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
-      { text: 'Camera 2', coordinates: [85.18366, 27.97585], color: '#ffd400', arrow: true, size: 20, placement: 'below' },
+      { text: 'Camera 5', coordinates: [85.18561, 27.97566], color: '#ffd400', size: 20, textBearing: 140, dot: true  },
+      { text: 'Camera 6', coordinates: [85.18366, 27.97585], color: '#ffd400', size: 20, textBearing: 220, dot: true  },
+      { text: 'Direction of flow', coordinates: [85.181532, 27.978881], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 130 }
     ],
   },
   {
@@ -519,15 +534,16 @@ export const mapOverlays = [
     id: 'trishuli-cameras-labels',
     chapterIds: ['trishuli-bidur'],
     labels: [
-      { text: 'Camera 1', coordinates: [85.1483, 27.92057], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
-      { text: 'Camera 2', coordinates: [85.14828, 27.92814], color: '#ffd400', arrow: true, size: 20, placement: 'above' },
+      { text: 'Camera 7', coordinates: [85.1483, 27.92057], color: '#ffd400', size: 25, textBearing: 20, dot: true },
+      { text: 'Camera 8', coordinates: [85.14828, 27.92814], color: '#ffd400', size: 25, textBearing: 0, dot: true },
+      { text: 'Direction of flow', coordinates: [85.149808, 27.931345], color: '#FF2C2C', size: 25, textBearing: 0, dot: false, arrow: true, arrowBearing: 180 }
     ],
   },
   {
     id: 'distance-glacier-to-rasu',
     data: '/data/distance_glacier_to_rasu.geojson',
     lineColor: '#d71920',
-    chapterIds: ['distance-glacier-rasu'],
+    chapterIds: ['distance-glacier-rasu' ],
   },
   {
     id: 'distance-glacier-to-work-site',

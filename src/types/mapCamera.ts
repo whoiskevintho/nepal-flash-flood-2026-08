@@ -34,10 +34,23 @@ export type MapLabel = {
   italic?: boolean
   /** Text size in pixels at zoom 10. It grows as the map zooms in. Defaults to 18. */
   size?: number
-  /** Defaults to `above`. */
+  /** Defaults to `above`. Ignored when `textBearing` is set. */
   placement?: MapLabelPlacement
-  /** Draws an arrow between the text and the point, pointing at the point. */
+  /**
+   * Where the text sits, in degrees clockwise from straight up on the screen.
+   * The line to the dot follows this direction. Overrides `placement`.
+   */
+  textBearing?: number
+  /** Same as `textBearing`. */
+  bearing?: number
+  /** Draws a dot on the coordinate and a line from that dot to the text. */
+  dot?: boolean
+  /** Draws the line from the coordinate to the text without a dot. */
+  line?: boolean
+  /** Draws an arrow at the coordinate. Aim it with `arrowBearing`. */
   arrow?: boolean
+  /** Direction the arrowhead points, in degrees clockwise from straight up. */
+  arrowBearing?: number
 }
 
 /** Text labels, and optional arrows, written directly in TypeScript. */
