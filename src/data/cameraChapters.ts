@@ -180,7 +180,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'border-crossing-rasu-intro',
-        'CCTV cameras captured the debris flow as it destroyed the border crossing. [[yellow:Camera 1]] was pointed south west, at the main border crossing building. [[yellow:Camera 2]] was looking north west up the Trishuli River.',
+        'CCTV cameras captured the debris flow as it destroyed infrastructure at the border crossing. [[yellow:Camera 1]] was pointed south west, at the main building. [[yellow:Camera 2]] was looking north west up the Trishuli River.',
         90,
         36,
       ),
