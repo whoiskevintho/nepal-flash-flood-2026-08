@@ -48,44 +48,44 @@ const MARKER_GAP_PX = 8
 const LEADER_PIXEL_RATIO = 2
 const TERRAIN_EXAGGERATION = 1
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
-const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
-
-// const satelliteSource: RasterSourceSpecification = {
-//   type: 'raster',
-//   tiles: [
-//     `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
-//   ],
-//   tileSize: 256,
-//   attribution: 'Satellite imagery © MapTiler',
-//   maxzoom: 22,
-// }
+// const TERRARIUM_TILES = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']
 
 const satelliteSource: RasterSourceSpecification = {
   type: 'raster',
   tiles: [
-    'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+    `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY ?? ''}`,
   ],
   tileSize: 256,
-  attribution:
-    'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
-  maxzoom: 14,
+  attribution: 'Satellite imagery © MapTiler',
+  maxzoom: 22,
 }
 
-// const demSource: RasterDEMSourceSpecification = {
-//   type: 'raster-dem',
-//   url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
-//   encoding: 'terrarium',
+// const satelliteSource: RasterSourceSpecification = {
+//   type: 'raster',
+//   tiles: [
+//     'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg',
+//   ],
 //   tileSize: 256,
+//   attribution:
+//     'Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2024)',
 //   maxzoom: 14,
 // }
 
 const demSource: RasterDEMSourceSpecification = {
   type: 'raster-dem',
-  tiles: TERRARIUM_TILES,
+  url: 'pmtiles://https://pub-890dc02699474df8ae81f43d5c38e315.r2.dev/nepal_terrain_v2.pmtiles',
   encoding: 'terrarium',
   tileSize: 256,
-  maxzoom: 15,
+  maxzoom: 14,
 }
+
+// const demSource: RasterDEMSourceSpecification = {
+//   type: 'raster-dem',
+//   tiles: TERRARIUM_TILES,
+//   encoding: 'terrarium',
+//   tileSize: 256,
+//   maxzoom: 15,
+// }
 
 const satelliteLayer: LayerSpecification = {
   id: 'satellite',
