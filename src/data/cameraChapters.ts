@@ -22,7 +22,7 @@ function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
 
 export const storyIntro = {
   kicker: 'Visual story',
-  title: 'Following the path of the flood in Nepal',
+  title: 'Following the path of the flood',
   deck: 'A visual story following the path of the torrential flash flood that struck Nepal in August 2026. This story puts the scale of the disaster into context through satellite imagery and eyewitness video.',
   author: 'Kevin Young',
   authorHref: 'https://whoiskevintho.com/',
@@ -464,6 +464,12 @@ export const mapOverlays = [
     id: 'glacier-labels',
     labels: [
       { text: 'Glacier', coordinates: [85.53488, 28.28415] },
+    ],
+  },
+  {
+    id: 'kathmandu-labels',
+    labels: [
+      { text: 'Kathmandu', coordinates: [85.33994, 27.70068], italic: true },
     ],
   },
   {
