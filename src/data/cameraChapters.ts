@@ -22,8 +22,8 @@ function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
 
 export const storyIntro = {
   kicker: 'Visual story',
-  title: 'The scale of the floods in Nepal',
-  deck: 'A visual story following the path of the torrential August flash flood in Nepal. Features eyewitness video and satellite imagery.',
+  title: 'Following the path of the flood in Nepal',
+  deck: 'A visual story following the path of the torrential flash flood that struck Nepal in August 2026. The story puts the scale of the disaster into context through satellite imagery and eyewitness video.',
   author: 'Kevin Young',
   authorHref: 'https://whoiskevintho.com/',
   date: 'October 5, 2026',

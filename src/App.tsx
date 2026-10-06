@@ -112,7 +112,9 @@ function App() {
         node.style.opacity = String(opacity)
         node.style.visibility = isActive ? 'visible' : 'hidden'
         node.setAttribute('aria-hidden', isActive ? 'false' : 'true')
-        node.style.transform = `translateX(-50%) translateY(${-risePx}px)`
+        if (box.motion === 'rise') {
+          node.style.top = `calc(100svh - ${risePx}px)`
+        }
       }
 
       setVisibleBoxId(active && active.opacity > 0 ? active.id : null)

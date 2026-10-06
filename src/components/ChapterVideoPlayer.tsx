@@ -38,7 +38,7 @@ function getFacebookEmbedUrl(facebookUrl: string) {
       host === 'fb.com' ||
       host === 'fb.watch'
     ) {
-      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookUrl)}&show_text=false`
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(facebookUrl)}&show_text=false&allowfullscreen=true`
     }
   } catch {
     return null
