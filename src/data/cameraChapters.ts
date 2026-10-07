@@ -21,7 +21,7 @@ function pinned(id: string, text: string, holdVh: number, gapVh = 24): TextBox {
 }
 
 export const storyIntro = {
-  kicker: 'Visual story',
+  kicker: '',
   title: 'Following the path of the flood',
   deck: 'A visual story following the path of the torrential flash flood that struck Nepal in August 2026. This story puts the scale of the disaster into context through satellite imagery and eyewitness video.',
   author: 'Kevin Young',
@@ -90,7 +90,7 @@ export const storyChapters = [
     boxes: [
       { //Chapter 1
         id: 'himalaya-overview-intro',
-        text: 'At approximately 8:37 a.m. local time in Nepal on August 26, 2026, the glacier below Langtang Lirung Peak collapsed, registering as a 5.2 seismic event.',
+        text: 'At 8:37 a.m. local time on August 26, 2026, a glacier below Nepal\'s Langtang Lirung peak collapsed, triggering a magnitude 5.2 seismic event.',
         holdVh: 120,
         fadeVh: 15,
         gapVh: 20,
@@ -98,13 +98,13 @@ export const storyChapters = [
       },
       pinned(
         'himalaya-overview-detail',
-        'This [[yellow:yellow]] area was traced from satellite imagery and covers the extent of the ice and bedrock that detached during the collapse.',
+        'This [[yellow:yellow area]] was traced from satellite imagery and covers the extent of the ice and bedrock that detached during the collapse.',
         90,
         36,
       ),
       pinned(
         'himalaya-overview-detail-2',
-        'It measures approximately one mile across and half a mile tall and sits at an elevation of [[red:16,880 feet]]. The valley floor below is at an elevation of 12,150 feet, meaning the debris fell nearly a mile at the start of the torrential debris flow.',
+        'The [[yellow:area]] spans about a mile across and half a mile in height, perched at an elevation of [[red:16,880 feet]]. With the valley floor below at 12,150 feet, the debris plunged nearly a mile at the start of the torrential debris flow.',
         90,
         36,
       ),
@@ -484,7 +484,7 @@ export const mapOverlays = [
     id: 'rasuwagadi-labels',
     chapterIds: ['distance-glacier-rasu', 'border-crossing-rasu'],
     labels: [
-      { text: 'Rasuwagadi', coordinates: [85.37702, 28.27727], italic: true },
+      { text: 'Rasuwagadi', coordinates: [85.377113, 28.276123], italic: true },
     ],
   },
   {
