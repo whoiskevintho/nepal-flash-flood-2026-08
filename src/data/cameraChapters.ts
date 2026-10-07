@@ -66,6 +66,11 @@ export const storyEnd: {
       detail: 'Elevation tiles for the 3D terrain.',
       href: 'https://registry.opendata.aws/terrain-tiles/',
     },
+    {
+      name: 'U.S. Geological Survey',
+      detail: 'Event page for the 2026 Nepal flash flood.',
+      href: 'https://www.usgs.gov/programs/landslide-hazards/science/2026-nepal-debris-avalanche-and-flash-flood',
+    },
   ],
 }
 
@@ -104,7 +109,7 @@ export const storyChapters = [
       ),
       pinned(
         'himalaya-overview-detail-2',
-        'The [[yellow:area]] spans about a mile across and half a mile in height, perched at an elevation of [[red:16,880 feet]]. With the valley floor below at 12,150 feet, the debris plunged nearly a mile at the start of the torrential debris flow.',
+        'The [[yellow:area]] spans about a mile across and half a mile in height, perched at an elevation of [[red:16,880 feet]]. With the valley floor below at 12,150 feet, the debris plunged nearly a mile at the start of the torrential flash flood.',
         90,
         36,
       ),
@@ -153,7 +158,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'distance-glacier-rasu-intro',
-        'By 8:45 a.m., the debris flow had reached the Tibet–Nepal border crossing, traveling [[red:13 miles]] downstream and descending [[red:10,900 feet]].',
+        'By 8:45 a.m., the flood had reached the Tibet–Nepal border crossing, traveling [[red:13 miles]] downstream and descending [[red:10,900 feet]].',
         96,
         16,
       ),
@@ -180,7 +185,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'border-crossing-rasu-intro',
-        'CCTV cameras captured the debris flow as it destroyed infrastructure at the border crossing. [[yellow:Camera 1]] was pointed south west, at the main building. [[yellow:Camera 2]] was looking north west up the Trishuli River.',
+        'CCTV cameras captured the flash flood as it destroyed infrastructure at the border crossing. [[yellow:Camera 1]] was pointed south west, at the main building. [[yellow:Camera 2]] was looking north west up the Trishuli River.',
         90,
         36,
       ),
@@ -225,7 +230,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'distance-work-site-detail',
-        'By the time the flow reached a hydro facility in Mailung, it had descended [[red:13,880 feet]] and traveled [[red:32 miles]] downstream from the glacier.',
+        'By the time the flood reached a hydro facility in Mailung, it had descended [[red:13,880 feet]] and traveled [[red:32 miles]] downstream from the glacier.',
         90,
         36,
       ),
@@ -252,7 +257,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'work-site-detail',
-        'Workers and witnesses captured the debris flow as it rapidly approached.[[yellow:Camera 3]] was filmed from the bank of the Trishuli river and captures the approaching flood. [[yellow:Camera 4]] was filmed from a higher elevation.',
+        'Workers and witnesses captured the flash flood as it rapidly approached.[[yellow:Camera 3]] was filmed from the bank of the Trishuli river and captures the approaching flood. [[yellow:Camera 4]] was filmed from a higher elevation.',
         100,
         36,
       ),
@@ -302,7 +307,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'distance-betrawati-detail',
-        'By the time the flow reached the town of Betrawati, it had descended [[red:14,880 feet]] and traveled [[red:39 miles]] downstream from the glacier.',
+        'By the time the flood reached the town of Betrawati, it had descended [[red:14,880 feet]] and traveled [[red:39 miles]] downstream from the glacier.',
         90,
         36,
       ),
@@ -329,7 +334,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'betrawati-detail',
-        'Witnesses captured the debris flow as it destroyed the town. [[yellow:Camera 5]] filmed from a higher elevation looking downstream, and captures the debris flow as it enters town and pushes up a tributary river. [[yellow:Camera 6]] was captured from a lower elevation along the Tishuli River, looking west as the debris flow violently swept past.',
+        'Witnesses captured the flash flood as it destroyed the town. [[yellow:Camera 5]] filmed from a higher elevation looking downstream, and captures the flood as it enters town and pushes up a tributary river. [[yellow:Camera 6]] was captured from a lower elevation along the Tishuli River, looking south west as the flood violently swept past.',
         100,
         36,
       ),
@@ -379,7 +384,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'distance-trishuli-detail',
-        'By the time the flow reached the town of Trishuli, it had descended [[red:15,060 feet]] and traveled [[red:44 miles]].',
+        'By the time the flood reached the town of Trishuli, it had descended [[red:15,060 feet]] and traveled [[red:44 miles]].',
         90,
         36,
       ),
@@ -406,7 +411,7 @@ export const storyChapters = [
     boxes: [
       pinned(
         'trishuli-bidur-detail',
-        'Footage from [[yellow:Camera 7]] was captured by witnesses from the roof of a Buddhist temple, and shows the debris flow as it enters town. [[yellow:Camera 8]] was captured just north of the town and looks upstream as the debris flow approaches.',
+        'Footage from [[yellow:Camera 7]] was captured by witnesses from the roof of a Buddhist temple, and shows the flash flood as it enters town. [[yellow:Camera 8]] was captured just north of the town and looks upstream as the flood approaches.',
         90,
         36,
       ),
@@ -477,7 +482,7 @@ export const mapOverlays = [
     chapterIds: ['himalaya-overview'],
     labels: [
       { text: 'Valley floor', coordinates: [85.5104, 28.29344] },
-      { text: 'Langtang Lirung', coordinates: [85.516583, 28.256547], italic: true  },
+      { text: 'Langtang Lirung', coordinates: [85.517269, 28.262453], italic: true  },
     ],
   },
   {
@@ -493,7 +498,7 @@ export const mapOverlays = [
     labels: [
       { text: 'Camera 1', coordinates: [85.37789, 28.28041], color: '#ffd400', size: 20, textBearing: 150, dot: true },
       { text: 'Camera 2', coordinates: [85.37789, 28.28041], color: '#ffd400', size: 20, textBearing: 280, dot: true },
-      { text: 'Direction of flow', coordinates: [85.382758, 28.282321], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 },
+      { text: 'Direction of flood', coordinates: [85.382758, 28.282321], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 },
       { text: 'Trishuli River', coordinates: [85.369035, 28.286315], italic: true },
     ],
   },
@@ -510,7 +515,7 @@ export const mapOverlays = [
     labels: [
       { text: 'Camera 3', coordinates: [85.20785, 28.07332], color: '#ffd400', size: 20, textBearing: 40, dot: true },
       { text: 'Camera 4', coordinates: [85.20367, 28.07256], color: '#ffd400', size: 20, textBearing: 60, dot: true },
-      { text: 'Direction of flow', coordinates: [85.214605, 28.076906], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 }
+      { text: 'Direction of flood', coordinates: [85.214605, 28.076906], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 210 }
     ],
   },
   {
@@ -526,7 +531,7 @@ export const mapOverlays = [
     labels: [
       { text: 'Camera 5', coordinates: [85.18561, 27.97566], color: '#ffd400', size: 20, textBearing: 140, dot: true  },
       { text: 'Camera 6', coordinates: [85.18366, 27.97585], color: '#ffd400', size: 20, textBearing: 220, dot: true  },
-      { text: 'Direction of flow', coordinates: [85.181532, 27.978881], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 130 }
+      { text: 'Direction of flood', coordinates: [85.181532, 27.978881], color: '#FF2C2C', size: 20, textBearing: 0, dot: false, arrow: true, arrowBearing: 130 }
     ],
   },
   {
@@ -542,7 +547,7 @@ export const mapOverlays = [
     labels: [
       { text: 'Camera 7', coordinates: [85.1483, 27.92057], color: '#ffd400', size: 25, textBearing: 20, dot: true },
       { text: 'Camera 8', coordinates: [85.14828, 27.92814], color: '#ffd400', size: 25, textBearing: 0, dot: true },
-      { text: 'Direction of flow', coordinates: [85.149808, 27.931345], color: '#FF2C2C', size: 25, textBearing: 0, dot: false, arrow: true, arrowBearing: 180 }
+      { text: 'Direction of flood', coordinates: [85.149808, 27.931345], color: '#FF2C2C', size: 25, textBearing: 0, dot: false, arrow: true, arrowBearing: 180 }
     ],
   },
   {
